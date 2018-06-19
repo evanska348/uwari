@@ -2,9 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
-import firebase from 'firebase'
 import registerServiceWorker from './registerServiceWorker';
-import { initFirestorter, Collection } from 'firestorter';
 
 // var config = {
 //     apiKey: "AIzaSyBGflsX38vQ4SVYcsPDXySUmIWZFnbIwao",

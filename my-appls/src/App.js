@@ -8,7 +8,7 @@ import Select from 'react-select';
 import createClass from 'create-react-class';
 import firebase from 'firebase';
 import 'firebase/auth';
-import 'firebase/database';
+// import 'firebase/database';
 import 'firebase/firestore';
 
 var config = {
@@ -144,7 +144,8 @@ class CMVdb extends Component {
       poly: [],
       term: [],
       phos: [],
-      drugs: []
+      drugs: [],
+      pressed: false
     }
   }
 
@@ -169,6 +170,8 @@ class CMVdb extends Component {
             this.setState({ drugs: drugarray })
           });
       });
+
+
     var ul54polymerasevariance = []
     db
       .collection('ul54polymerasevariance')
@@ -177,56 +180,36 @@ class CMVdb extends Component {
         snapshot
           .docs
           .forEach(doc => {
-            var object = JSON.parse(doc._document.data)
-            var keys = Object.keys(object);
-            var i;
-            for (i = 0; i < keys.length; i++) {
-              ul54polymerasevariance.push({
-                label: keys[i],
-                value: keys[i]
-              })
-            }
+            var object = doc.data().Variance
+            ul54polymerasevariance.push({ label: object, value: object })
             this.setState({ poly: ul54polymerasevariance })
           });
       });
+
     var UL54terminase = []
     db
-      .collection('UL54terminase')
+      .collection('ul54terminasevariance')
       .get()
       .then(snapshot => {
         snapshot
           .docs
           .forEach(doc => {
-            var object = JSON.parse(doc._document.data)
-            var keys = Object.keys(object);
-            var i;
-            for (i = 0; i < keys.length; i++) {
-              UL54terminase.push({
-                label: keys[i],
-                value: keys[i]
-              })
-            }
+            var object = doc.data().Variance
+            UL54terminase.push({ label: object, value: object })
             this.setState({ term: UL54terminase })
           });
       });
 
     var UL97phosphotransferase = []
     db
-      .collection('UL97phosphotransferase')
+      .collection('ul97phosphotransferasevariance')
       .get()
       .then(snapshot => {
         snapshot
           .docs
           .forEach(doc => {
-            var object = JSON.parse(doc._document.data)
-            var keys = Object.keys(object);
-            var i;
-            for (i = 0; i < keys.length; i++) {
-              UL54terminase.push({
-                label: keys[i],
-                value: keys[i]
-              })
-            }
+            var object = doc.data().Variance
+            UL97phosphotransferase.push({ label: object, value: object })
             this.setState({ phos: UL97phosphotransferase })
           });
       });
@@ -236,30 +219,59 @@ class CMVdb extends Component {
     this.setState({
       selected54poly: value
     });
-    console.log(value)
+    //   console.log(value)
   }
 
   onChangeSelection54term(value) {
     this.setState({
       selected54term: value
     });
-    console.log(value)
+    //  console.log(value)
   }
 
   onChangeSelection97phos(value) {
     this.setState({
       selected96phos: value
     });
-    console.log(value)
+    //  console.log(value)
   }
 
   handleSubmit() {
-    var variances = db.collection("ul54polymerasevariance");
     var data = []
-    for (var i; i < this.state.selected54poly.length; i++) {
-      data.push(variances.where("variance", "==", this.state.selected54poly[i]))
+    if (this.state.selected54poly !== '') {
+      var polystate = this.state.selected54poly.split(',');
+      for (let i = 0; i < polystate.length; i++) {
+        let docRef = db.collection("ul54polymerasevariance").doc(polystate[i]);
+        docRef.get().then(function (doc) {
+          if (doc.exists) {
+            data.push(doc.data());
+          }
+        }).catch(function (error) {
+          console.log("Error getting document:", error);
+        });
+      }
+    }
+
+    if (this.state.selected54term !== '') {
+      var termstate = this.state.selected54term.split(',');
+      for (let i = 0; i < termstate.length; i++) {
+        let docRef = db.collection("ul54terminasevariance").doc(termstate[i]);
+        docRef.get().then(function (doc) {
+          if (doc.exists) {
+            data.push(doc.data());
+          }
+        }).catch(function (error) {
+          console.log("Error getting document:", error);
+        });
+      }
     }
     console.log(data)
+    // db
+    //   .collection("ul54polymerasevariance")
+    //   .where("variance", "==", state[0])
+    //   .onSnapshot(datasnapShot => {
+    //     console.log(dataSnapshot.docs)
+    //   });
   }
 
   // fold increase
@@ -276,10 +288,10 @@ class CMVdb extends Component {
         <h4>UL54 - DNA Polymerase</h4>
         <MultiVarianceSelectField changeSelection={this.onChangeSelection54poly.bind(this)} input={this.state.poly}></MultiVarianceSelectField>
         <h4>UL54 - Terminase</h4>
-        <MultiVarianceSelectField changeSelection={this.onChangeSelection54term.bind(this)} input={ul54terminase}></MultiVarianceSelectField>
+        <MultiVarianceSelectField changeSelection={this.onChangeSelection54term.bind(this)} input={this.state.term}></MultiVarianceSelectField>
         <h4>UL97 - Phosphotransferase</h4>
         <MultiVarianceSelectField changeSelection={this.onChangeSelection97phos.bind(this)} input={UL97Phosphotransferase}></MultiVarianceSelectField>
-        <button onClick={this.handleSubmit} className="btn btn-primary" type="submit">Analyze</button>
+        <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
       </div>
     );
   }
@@ -648,7 +660,7 @@ var MultiVarianceSelectField = createClass({
           multi
           onChange={this.handleSelectChange}
           options={options}
-          placeholder="Drug display options"
+          placeholder="Choose variances"
           removeSelected={this.state.removeSelected}
           rtl={this.state.rtl}
           simpleValue
