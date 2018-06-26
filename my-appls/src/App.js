@@ -61,7 +61,7 @@ class App extends Component {
     return (
       <div>
         <header>
-          <h1 className="App-title">Cytomegalovirus Drug Resistance Database</h1>
+          <h1 className="display-4">Cytomegalovirus Drug Resistance Database</h1>
           <Router>
             <div className="nav">
               <NavLink activeClassName="active" activeStyle={{ color: 'grey', borderBottom: '1px solid grey' }} style={{ color: 'black' }} to="/WelcomePage">
@@ -71,17 +71,22 @@ class App extends Component {
                 <div className="pageslabel">CMVdb Program</div>
               </NavLink>
               {this.state.user === '' ?
-                <NavLink activeClassName="active" activeStyle={{ color: 'black', borderBottom: '1px solid grey' }} style={{ color: 'black' }} to="/login">
-                  <div className="pageslabel">Login</div>
-                </NavLink>
+                <div>
+                  <NavLink activeClassName="active" activeStyle={{ color: 'black', borderBottom: '1px solid grey' }} style={{ color: 'black' }} to="/login">
+                    <div className="pageslabel">Login</div>
+                  </NavLink>
+                </div>
                 :
-                <button type='button' className="btn btn-danger btn-xs" onClick={this.handleLogout}>Logout</button>
+                <div>
+                  <NavLink activeClassName="active" user={this.state.user} activeStyle={{ color: 'grey', borderBottom: '1px solid grey' }} style={{ color: 'black' }} to="/AddVariants">
+                    <div className="pageslabel">Add Variants</div>
+                  </NavLink>
+                  <button type='button' className="btn btn-danger btn-sm" onClick={this.handleLogout}>Logout</button>
+                </div>
               }
-              {/* <NavLink activeClassName="active" activeStyle={{ color: 'grey', borderBottom: '1px solid grey' }} style={{ color: 'black' }} to="/login">
-                <div className="pageslabel">Login</div>
-              </NavLink> */}
               <Route path="/WelcomePage" component={WelcomePage} />
               <Route path="/CMVdb" component={CMVdb} />
+              <Route path="/AddVariants" component={AddVariants} />
               <Route path="/login" render={(props) => (
                 <Login {...props} handlerFromParent={this.handleUser} />
               )} />
@@ -110,44 +115,27 @@ class WelcomePage extends Component {
   }
 }
 
-
-// const todos = new Collection('todos');
-
-// const Todos = observer(class Todos extends Component {
-//   render() {
-//     return <div>
-//       {todos.docs.map((doc) => (
-//         <TodoItem
-//           key={todos.id}
-//           doc={doc} />
-//       ))}
-//     </div>;
-//   }
-// });
-
-// const TodoItem = observer(({ doc }) => {
-//   const { finished, text } = doc.data;
-//   return <div>
-//     <input type='checkbox' checked={finished} />
-//     <input type='text' value={text} />
-//   </div>;
-// });
-
 class CMVdb extends Component {
 
   constructor() {
     super();
     this.state = {
       selected54poly: [],
-      selected54term: [],
+      selected56term: [],
       selected96phos: [],
       poly: [],
       term: [],
       phos: [],
       drugs: [],
-      pressed: false
+      submitClicked: false,
+      empty: false,
+      selecteddrugs: []
     }
   }
+  //lobucavir (LBV) 
+  //adefovir (ADV)
+  //valganciclovir (valGCV)
+  //f412s
 
   componentDidMount() {
     var drugarray = []
@@ -170,9 +158,7 @@ class CMVdb extends Component {
             this.setState({ drugs: drugarray })
           });
       });
-
-
-    var ul54polymerasevariance = []
+    var ul54polymerasevariants = []
     db
       .collection('ul54polymerasevariance')
       .get()
@@ -181,12 +167,12 @@ class CMVdb extends Component {
           .docs
           .forEach(doc => {
             var object = doc.data().Variance
-            ul54polymerasevariance.push({ label: object, value: object })
-            this.setState({ poly: ul54polymerasevariance })
+            ul54polymerasevariants.push({ label: object, value: object })
+            this.setState({ poly: ul54polymerasevariants })
           });
       });
 
-    var UL54terminase = []
+    var UL56terminase = []
     db
       .collection('ul54terminasevariance')
       .get()
@@ -195,8 +181,8 @@ class CMVdb extends Component {
           .docs
           .forEach(doc => {
             var object = doc.data().Variance
-            UL54terminase.push({ label: object, value: object })
-            this.setState({ term: UL54terminase })
+            UL56terminase.push({ label: object, value: object })
+            this.setState({ term: UL56terminase })
           });
       });
 
@@ -215,31 +201,16 @@ class CMVdb extends Component {
       });
   }
 
+  onChangeSelectionDrug(value) {
+    this.setState({
+      selecteddrugs: value.split(',')
+    });
+  }
+
   onChangeSelection54poly(value) {
-    this.setState({
-      selected54poly: value
-    });
-    //   console.log(value)
-  }
-
-  onChangeSelection54term(value) {
-    this.setState({
-      selected54term: value
-    });
-    //  console.log(value)
-  }
-
-  onChangeSelection97phos(value) {
-    this.setState({
-      selected96phos: value
-    });
-    //  console.log(value)
-  }
-
-  handleSubmit() {
-    var data = []
-    if (this.state.selected54poly !== '') {
-      var polystate = this.state.selected54poly.split(',');
+    var data = [];
+    if (value !== '') {
+      var polystate = value.split(',');
       for (let i = 0; i < polystate.length; i++) {
         let docRef = db.collection("ul54polymerasevariance").doc(polystate[i]);
         docRef.get().then(function (doc) {
@@ -251,9 +222,13 @@ class CMVdb extends Component {
         });
       }
     }
+    this.setState({ selected54poly: data })
+  }
 
-    if (this.state.selected54term !== '') {
-      var termstate = this.state.selected54term.split(',');
+  onChangeSelection56term(value) {
+    var data = [];
+    if (value !== '') {
+      var termstate = value.split(',');
       for (let i = 0; i < termstate.length; i++) {
         let docRef = db.collection("ul54terminasevariance").doc(termstate[i]);
         docRef.get().then(function (doc) {
@@ -265,35 +240,221 @@ class CMVdb extends Component {
         });
       }
     }
-    console.log(data)
-    // db
-    //   .collection("ul54polymerasevariance")
-    //   .where("variance", "==", state[0])
-    //   .onSnapshot(datasnapShot => {
-    //     console.log(dataSnapshot.docs)
-    //   });
+    this.setState({ selected56term: data })
+    //  console.log(value)
   }
 
-  // fold increase
-  // reference
-  // comments
+
+
+  onChangeSelection97phos(value) {
+    this.setState({
+      selected96phos: value
+    });
+    //  console.log(value)
+  }
+  // setDataState(data) {
+  //   var inf = this.state.data;
+  //   inf.push(data);
+  //   this.setState({ data: inf });
+  // }
+
+  handleSubmit() {
+    if (this.state.selected54poly === [] &&
+      this.state.selected56term === [] &&
+      this.state.selected96phos === []) {
+      this.setState({ empty: true });
+      console.log("YOOOO")
+    } else {
+      this.setState({ empty: false });
+      if (this.state.submitClicked === true) {
+        this.setState({
+          selecteddrugs: [],
+          selected54poly: [],
+          selected56term: []
+        })
+      }
+      this.setState({ submitClicked: !this.state.submitClicked })
+      // this.setState(prevState => ({
+      //   submitClicked: !prevState.submitClicked
+      // }));
+    }
+  }
 
   render() {
+
     return (
       <div className="container" >
-        <h3 className='pageheader'>Genotypic Resistance Interpretation Algorithm</h3>
-        <p className='druglabel'>Drug Selection</p>
-        <MultiDrugSelectField input={this.state.drugs}></MultiDrugSelectField>
-        <h3 className='druglabel'>Mutation Selection</h3>
-        <h4>UL54 - DNA Polymerase</h4>
-        <MultiVarianceSelectField changeSelection={this.onChangeSelection54poly.bind(this)} input={this.state.poly}></MultiVarianceSelectField>
-        <h4>UL54 - Terminase</h4>
-        <MultiVarianceSelectField changeSelection={this.onChangeSelection54term.bind(this)} input={this.state.term}></MultiVarianceSelectField>
-        <h4>UL97 - Phosphotransferase</h4>
-        <MultiVarianceSelectField changeSelection={this.onChangeSelection97phos.bind(this)} input={UL97Phosphotransferase}></MultiVarianceSelectField>
-        <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
+        {
+          this.state.submitClicked ?
+            <div>
+              <div>
+                <h2>Results:</h2>
+                <Results selecteddrugs={this.state.selecteddrugs} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+              </div>
+            </div>
+            :
+            <div>
+              <h3 className='pageheader'>Genotypic Resistance Interpretation Algorithm</h3>
+              <p className='druglabel'>Drug Selection</p>
+              <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
+              <h3 className='druglabel'>Mutation Selection</h3>
+              <h4>UL54 - DNA Polymerase</h4>
+              <MultiVarianceSelectField changeSelection={this.onChangeSelection54poly.bind(this)} input={this.state.poly}></MultiVarianceSelectField>
+              <h4>UL56 - Terminase</h4>
+              <MultiVarianceSelectField changeSelection={this.onChangeSelection56term.bind(this)} input={this.state.term}></MultiVarianceSelectField>
+              <h4>UL97 - Phosphotransferase</h4>
+              <MultiVarianceSelectField changeSelection={this.onChangeSelection97phos.bind(this)} input={UL97Phosphotransferase}></MultiVarianceSelectField>
+              <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
+              {this.state.empty ?
+                <div><p>please enter a variant</p></div>
+                :
+                <div></div>
+              }
+            </div>
+        }
       </div>
     );
+  }
+}
+
+class Results extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      selected54poly: this.props.selected54poly,
+      selected56term: this.props.selected56term,
+      selecteddrugs: this.props.selecteddrugs,
+      polyvarname: [],
+      polyvarreference: [],
+      termvarname: [],
+      termvarreference: []
+    };
+  }
+
+  // componentWillReceiveProps(nextProps) {
+  //   this.setState({ data: nextProps.data });
+  //   console.log(nextProps.data)
+  // }
+
+  componentDidMount() {
+  }
+
+  componentWillMount() {
+
+    var polyvarname = []
+    var polyvarreference = []
+    for (let i = 0; i < this.state.selected54poly.length; i++) {
+      polyvarname.push(this.state.selected54poly[i].Variance)
+      polyvarreference.push(this.state.selected54poly[i].Reference)
+    }
+    this.setState({ polyvarname: polyvarname })
+    this.setState({ polyvarreference: polyvarreference })
+    var termvarname = []
+    var termvarreference = []
+    for (let i = 0; i < this.state.selected56term.length; i++) {
+      termvarname.push(this.state.selected56term[i].Variance)
+      termvarreference.push(this.state.selected56term[i].Reference)
+    }
+    console.log(this.state.selected54poly)
+    this.setState({ termvarname: termvarname })
+    this.setState({ termvarreference: termvarreference })
+
+    var variants = this.state.selected54poly.concat(this.state.selected56term);
+    var drugobj = {};
+    var drugs = this.state.selecteddrugs;
+    for (let i = 0; i < drugs.length; i++) {
+      let drug = drugs[i]
+      drug = drug + "fold";
+      drugobj[drug] = 0;
+    }
+    drugs = Object.keys(drugobj)
+    for (let i = 0; i < variants.length; i++) {
+      for (let j = 0; j < drugs.length; j++) {
+        if (drugs[j] in variants[i]) {
+          drugobj[drugs[j]] = drugobj[drugs[j]] + variants[i][drugs[j]];
+        }
+      }
+    }
+    this.setState({ foldobj: drugobj })
+  }
+
+  render() {
+    // data = JSON.stringify(data
+    // console.log(typeof this.state.data[0].Variance)
+    //console.log(this.state.varname)
+    return (
+      <div>
+        <h5>Polymerase</h5>
+        <p>{this.state.polyvarname}</p>
+        <p>{this.state.polyvarreference}</p>
+        <h5>Terminase</h5>
+        <p>{this.state.termvarname}</p>
+        <p>{this.state.termvarreference}</p>
+        <h5>Drug Resistance Profile</h5>
+        <p>{JSON.stringify(this.state.foldobj)}</p>
+      </div>
+
+    )
+  }
+}
+
+// var Hello = React.createClass({
+//   render: function () {
+//     var names = ['Jake', 'Jon', 'Thruster'];
+//     return (
+//       <ul>
+//         {names.map(function (name, index) {
+//           return <li key={index}>{name}</li>;
+//         })}
+//       </ul>
+//     )
+//   }
+// });
+
+class AddVariants extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      user: this.props.user,
+    };
+  }
+
+  componentWillMount() {
+    this.setState({ user: this.props.user });
+  }
+
+  render() {
+    console.log(this.state.user)
+    return (
+      <div className="container">
+        <h3 className='pageheader'>Add Variants to the Database</h3>
+        <form>
+          <label>
+            Variant:
+          <input className="form-control" type="text" name="Variant" />
+          </label>
+          <hr />
+          <label>
+            Fold:
+          <input className="form-control" type="text" name="Fold" />
+          </label>
+          <hr />
+          <label>
+            Reference:
+          <input className="form-control" type="text" name="Reference" />
+          </label>
+          <hr />
+          <label>
+            Comments:
+          <input className="form-control" type="text" name="Comments" />
+          </label>
+          <hr />
+          <input className="btn btn-primary" type="submit" value="Submit" />
+        </form>
+        }
+      </div>
+    )
   }
 }
 
@@ -381,6 +542,7 @@ class Login extends Component {
   render() {
     return (
       <div className="container">
+        <h3 className='pageheader'>Log in to Contribute</h3>
         {this.state.errorMessage &&
           <p className="alert alert-danger">{this.state.errorMessage}</p>
         }
@@ -428,75 +590,6 @@ class Login extends Component {
     );
   }
 }
-
-const CMVDRUGS = [
-  { label: 'ganciclovir', value: 'ganciclovir' },
-  { label: 'foscarnet', value: 'foscarnet' },
-  { label: 'letermovir', value: 'letermovir' },
-  { label: 'marabavir', value: 'marabavir' },
-  { label: 'cidofovir', value: 'cidofovir' },
-  { label: 'brincidofovir', value: 'brincidofovir' },
-];
-
-const ul54polymerase = [
-  { label: 'D301N', value: 'D301N' },
-  { label: 'N408D', value: 'N408D' },
-  { label: 'N408K', value: 'N408K' },
-  { label: 'N408S', value: 'N408S' },
-  { label: 'N410K', value: 'N410K' },
-  { label: 'F412C', value: 'F412C' },
-  { label: 'F412L', value: 'F412L' },
-  { label: 'F412S', value: 'F412S' },
-  { label: 'F412V', value: 'F412V' },
-  { label: 'D413A', value: 'D413A' },
-  { label: 'D413E', value: 'D413E' },
-  { label: 'D413N', value: 'D413N' },
-  { label: 'P488R', value: 'P488R' },
-  { label: 'N495K', value: 'N495K' },
-  { label: 'K500N', value: 'K500N' },
-  { label: 'L501I', value: 'L501I' },
-  { label: 'T503I', value: 'T503I' },
-  { label: 'K513N', value: 'K513N' },
-  { label: 'K513E', value: 'K513E' },
-  { label: 'K513R', value: 'K513R' },
-  { label: 'D515E', value: 'D515E' },
-  { label: 'D515Y', value: 'D515Y' },
-  { label: 'L516R', value: 'L516R' },
-  { label: 'I521T', value: 'I521T' },
-  { label: 'P522A', value: 'P522A' },
-  { label: 'P522S', value: 'P522S' },
-  { label: 'del524', value: 'del524' },
-  { label: 'V526L', value: 'V526L' },
-  { label: 'C539G', value: 'C539G' },
-  { label: 'C539R', value: 'C539R' },
-];
-
-const ul54terminase = [
-  { label: 'S229F', value: 'S229F' },
-  { label: 'V231A', value: 'V231A' },
-  { label: 'V231L', value: 'V231L' },
-  { label: 'N232Y', value: 'N232Y' },
-  { label: 'V236L', value: 'V236L' },
-  { label: 'V236M', value: 'V236M' },
-  { label: 'E237D', value: 'E237D' },
-  { label: 'L241P', value: 'L241P' },
-  { label: 'T244K', value: 'T244K' },
-  { label: 'L254F', value: 'L254F' },
-  { label: 'L257F', value: 'L257F' },
-  { label: 'L257I', value: 'L257I' },
-  { label: 'K258E', value: 'K258E' },
-  { label: 'F261L', value: 'F261L' },
-  { label: 'Y321C', value: 'Y321C' },
-  { label: 'C325F', value: 'C325F' },
-  { label: 'C325R', value: 'C325R' },
-  { label: 'C325Y', value: 'C325Y' },
-  { label: 'M329T', value: 'M329T' },
-  { label: 'N368D', value: 'N368D' },
-  { label: 'R369G', value: 'R369G' },
-  { label: 'R369M', value: 'R369M' },
-  { label: 'R369S', value: 'R369S' },
-  { label: 'E237D', value: 'E237D' },
-];
 
 const UL97Phosphotransferase = [
   { label: 'L405P', value: 'L405P' },
@@ -546,10 +639,6 @@ const UL97Phosphotransferase = [
   { label: 'C603Y', value: 'C603Y' },
   { label: 'A606D', value: 'A606D' }
 ];
-const WHY_WOULD_YOU = [
-  { label: 'Chocolate (are you crazy?)', value: 'chocolate', disabled: true },
-].concat(CMVDRUGS.slice(1))
-
 
 var MultiDrugSelectField = createClass({
   displayName: 'MultiSelectField',
@@ -560,34 +649,19 @@ var MultiDrugSelectField = createClass({
     return {
       removeSelected: true,
       disabled: false,
-      crazy: false,
       stayOpen: false,
-      value: this.props.input,
+      value: [],
       rtl: false,
     };
   },
-
-  // componentDidMount() {
-  //   this.setState({ value: this.props.input })
-  // },
-
   handleSelectChange(value) {
-    console.log('You\'ve selected:', value);
     this.setState({ value });
-  },
-  toggleCheckbox(e) {
-    this.setState({
-      [e.target.name]: e.target.checked,
-    });
-  },
-  toggleRtl(e) {
-    let rtl = e.target.checked;
-    this.setState({ rtl });
+    this.props.changeSelection(value);
   },
 
   render() {
-    const { crazy, disabled, stayOpen, value } = this.state;
-    const options = crazy ? WHY_WOULD_YOU : this.props.input;
+    const { disabled, stayOpen, value } = this.state;
+    const options = this.props.input;
     return (
       <div className="section">
         <Select
@@ -602,29 +676,6 @@ var MultiDrugSelectField = createClass({
           simpleValue
           value={value}
         />
-
-        {/* <div className="checkbox-list">
-          <label className="checkbox">
-            <input type="checkbox" className="checkbox-control" name="removeSelected" checked={this.state.removeSelected} onChange={this.toggleCheckbox} />
-            <span className="checkbox-label">Remove selected options</span>
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" className="checkbox-control" name="disabled" checked={this.state.disabled} onChange={this.toggleCheckbox} />
-            <span className="checkbox-label">Disable the control</span>
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" className="checkbox-control" name="crazy" checked={crazy} onChange={this.toggleCheckbox} />
-            <span className="checkbox-label">I don't like Chocolate (disabled the option)</span>
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" className="checkbox-control" name="stayOpen" checked={stayOpen} onChange={this.toggleCheckbox} />
-            <span className="checkbox-label">Stay open when an Option is selected</span>
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" className="checkbox-control" name="rtl" checked={this.state.rtl} onChange={this.toggleCheckbox} />
-            <span className="checkbox-label">rtl</span>
-          </label>
-        </div> */}
       </div>
     );
   }
@@ -660,12 +711,122 @@ var MultiVarianceSelectField = createClass({
           multi
           onChange={this.handleSelectChange}
           options={options}
-          placeholder="Choose variances"
+          placeholder="Choose variants"
           removeSelected={this.state.removeSelected}
           rtl={this.state.rtl}
           simpleValue
           value={value}
         />
+      </div>
+    );
+  }
+});
+
+
+const STATES = [
+  { label: 'UL54-Polymerase', value: 'ul54polymerase' },
+  { label: 'UL56-Terminase', value: 'ul56terminase' },
+  { label: 'UL97-Phosphotransferase', value: 'ul97phosphotransferase' },
+];
+
+var StatesField = createClass({
+  displayName: 'StatesField',
+  propTypes: {
+    label: PropTypes.string,
+    searchable: PropTypes.bool,
+  },
+  getDefaultProps() {
+    return {
+      label: 'States:',
+      searchable: true,
+    };
+  },
+  getInitialState() {
+    return {
+      country: 'AU',
+      disabled: false,
+      searchable: this.props.searchable,
+      selectValue: 'new-south-wales',
+      clearable: true,
+      rtl: false,
+    };
+  },
+  clearValue(e) {
+    this.select.setInputValue('');
+  },
+  switchCountry(e) {
+    var newCountry = e.target.value;
+    this.setState({
+      country: newCountry,
+      selectValue: null,
+    });
+  },
+  updateValue(newValue) {
+    this.setState({
+      selectValue: newValue,
+    });
+  },
+  focusStateSelect() {
+    this.select.focus();
+  },
+  toggleCheckbox(e) {
+    let newState = {};
+    newState[e.target.name] = e.target.checked;
+    this.setState(newState);
+  },
+  render() {
+    var options = STATES[this.state.country];
+    return (
+      <div className="section">
+        <h3 className="section-heading">{this.props.label} <a href="https://github.com/JedWatson/react-select/tree/master/examples/src/components/States.js">(Source)</a></h3>
+        <Select
+          id="state-select"
+          ref={(ref) => { this.select = ref; }}
+          onBlurResetsInput={false}
+          onSelectResetsInput={false}
+          autoFocus
+          options={options}
+          simpleValue
+          clearable={this.state.clearable}
+          name="selected-state"
+          disabled={this.state.disabled}
+          value={this.state.selectValue}
+          onChange={this.updateValue}
+          rtl={this.state.rtl}
+          searchable={this.state.searchable}
+        />
+        <button style={{ marginTop: '15px' }} type="button" onClick={this.focusStateSelect}>Focus Select</button>
+        <button style={{ marginTop: '15px' }} type="button" onClick={this.clearValue}>Clear Value</button>
+
+        <div className="checkbox-list">
+
+          <label className="checkbox">
+            <input type="checkbox" className="checkbox-control" name="searchable" checked={this.state.searchable} onChange={this.toggleCheckbox} />
+            <span className="checkbox-label">Searchable</span>
+          </label>
+          <label className="checkbox">
+            <input type="checkbox" className="checkbox-control" name="disabled" checked={this.state.disabled} onChange={this.toggleCheckbox} />
+            <span className="checkbox-label">Disabled</span>
+          </label>
+          <label className="checkbox">
+            <input type="checkbox" className="checkbox-control" name="clearable" checked={this.state.clearable} onChange={this.toggleCheckbox} />
+            <span className="checkbox-label">Clearable</span>
+          </label>
+          <label className="checkbox">
+            <input type="checkbox" className="checkbox-control" name="rtl" checked={this.state.rtl} onChange={this.toggleCheckbox} />
+            <span className="checkbox-label">rtl</span>
+          </label>
+        </div>
+        <div className="checkbox-list">
+          <label className="checkbox">
+            <input type="radio" className="checkbox-control" checked={this.state.country === 'AU'} value="AU" onChange={this.switchCountry} />
+            <span className="checkbox-label">Australia</span>
+          </label>
+          <label className="checkbox">
+            <input type="radio" className="checkbox-control" checked={this.state.country === 'US'} value="US" onChange={this.switchCountry} />
+            <span className="checkbox-label">United States</span>
+          </label>
+        </div>
       </div>
     );
   }
