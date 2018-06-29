@@ -136,6 +136,8 @@ class CMVdb extends Component {
   //adefovir (ADV)
   //valganciclovir (valGCV)
   //f412s
+  //D515E
+  //C539R
 
   componentDidMount() {
     var drugarray = []
@@ -325,6 +327,7 @@ class Results extends Component {
       selected54poly: this.props.selected54poly,
       selected56term: this.props.selected56term,
       selecteddrugs: this.props.selecteddrugs,
+      allvars: [],
       polyvarname: [],
       polyvarreference: [],
       termvarname: [],
@@ -361,6 +364,7 @@ class Results extends Component {
     this.setState({ termvarreference: termvarreference })
 
     var variants = this.state.selected54poly.concat(this.state.selected56term);
+    this.setState({ allvars: variants });
     var drugobj = {};
     var drugs = this.state.selecteddrugs;
     for (let i = 0; i < drugs.length; i++) {
@@ -393,24 +397,71 @@ class Results extends Component {
         <p>{this.state.termvarreference}</p>
         <h5>Drug Resistance Profile</h5>
         <p>{JSON.stringify(this.state.foldobj)}</p>
+        {
+          this.state.allvars.map((variant) =>
+            <VariantCard key={variant.Variance} obj={variant} variant={variant.Variance} drugs={this.state.selecteddrugs} comments={variant.Comments} reference={variant.Reference} />)
+        }
       </div>
 
     )
   }
 }
 
-// var Hello = React.createClass({
-//   render: function () {
-//     var names = ['Jake', 'Jon', 'Thruster'];
-//     return (
-//       <ul>
-//         {names.map(function (name, index) {
-//           return <li key={index}>{name}</li>;
-//         })}
-//       </ul>
-//     )
-//   }
-// });
+class VariantCard extends React.Component {
+
+  constructor(props) {
+    super(props)
+    this.state = {
+      isHidden: true,
+      drugs: []
+    }
+  }
+
+  toggleHidden() {
+    this.setState({
+      isHidden: !this.state.isHidden
+    })
+  }
+
+  componentDidMount() {
+    let drugs = []
+    for (let i = 0; i < this.props.drugs.length; i++) {
+      let curdrug = this.props.drugs[i] + "fold"
+      let curvar = this.props.obj
+      if (curdrug in curvar) {
+        let cur = this.props.drugs[i] + "fold";
+        let drug = {};
+        drug[this.props.drugs[i]] = this.props.obj[cur];
+        drugs.push(drug);
+      }
+    }
+    this.setState({ drugs: drugs })
+  }
+
+  render() {
+    console.log(this.state.drugs)
+    var reference = this.props.reference.toString()
+    return (
+      <div className="card">
+        <h6 onClick={this.toggleHidden.bind(this)} className="card-title">{this.props.variant}</h6>
+        {!this.state.isHidden &&
+          <div className="card-body">
+            <h7>Experimental Fold</h7>
+            {
+              this.state.drugs.map((drug, i) =>
+                <p key={i}> {JSON.stringify(drug)} </p>)
+
+            }
+            <hr />
+            <p className="card-text">Reference: {reference}</p>
+            <hr />
+            <p className="card-text">Comments: {this.props.comments}</p>
+          </div>
+        }
+      </div>
+    )
+  }
+}
 
 class AddVariants extends Component {
   constructor(props) {
@@ -452,7 +503,6 @@ class AddVariants extends Component {
           <hr />
           <input className="btn btn-primary" type="submit" value="Submit" />
         </form>
-        }
       </div>
     )
   }

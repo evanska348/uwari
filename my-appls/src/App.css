@@ -145,3 +145,10 @@ h1 {
 #loggedin {
   margin-top: 1rem;
 }
+
+.card {
+  display: inline-block;
+  width: 200px;
+  margin: 1rem;
+  box-shadow: 1px 1px 2px black;
+}
