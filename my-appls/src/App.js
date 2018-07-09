@@ -10,6 +10,7 @@ import firebase from 'firebase';
 import 'firebase/auth';
 // import 'firebase/database';
 import 'firebase/firestore';
+import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table'
 
 var config = {
   apiKey: "AIzaSyBGflsX38vQ4SVYcsPDXySUmIWZFnbIwao",
@@ -122,7 +123,8 @@ class CMVdb extends Component {
     this.state = {
       selected54poly: [],
       selected56term: [],
-      selected96phos: [],
+      selected97phos: [],
+      epistasis: [],
       poly: [],
       term: [],
       phos: [],
@@ -132,14 +134,40 @@ class CMVdb extends Component {
       selecteddrugs: []
     }
   }
+
+  //NA found clinically but not phenotyped
   //lobucavir (LBV) 
   //adefovir (ADV)
   //valganciclovir (valGCV)
-  //f412s
-  //D515E
-  //C539R
+  //V781I 110397!!
+  //M393R flag
+  //M393K flag
+  //L501F
+  //Y(I)722V
+  //H729Y
+  //Y751H
+  //V787I
 
-  componentDidMount() {
+  //R369G
+  //R369S
+
+  //Del591–594 3-10 range
+  //A594P
+  //G598S commented about clinical
+  //C603R	3.6–8.3
+  //M460L
+  //A590T possibly clinical
+  //del590 to 600 11158760 no fold ratio just ec50
+  //del590 to 603 - ratio not there - jcv
+  //A591D not in any of the papers
+  //C592F can't open the reference from 72
+  //L595T can't open 9207351
+  //N597I can't open 9697738
+  //del597 to 603 no data in only reference https://academic.oup.com/view-large/figure/89851975/186-6-760-tab004.jpeg
+
+
+
+  componentWillMount() {
     var drugarray = []
     db
       .collection('drug')
@@ -160,6 +188,22 @@ class CMVdb extends Component {
             this.setState({ drugs: drugarray })
           });
       });
+    var epistasis = []
+    db
+      .collection('epistaticvariants')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data()
+            epistasis.push(object)
+            this.setState({ epistasis: epistasis });
+          });
+      });
+  }
+
+  componentDidMount() {
     var ul54polymerasevariants = []
     db
       .collection('ul54polymerasevariance')
@@ -168,7 +212,7 @@ class CMVdb extends Component {
         snapshot
           .docs
           .forEach(doc => {
-            var object = doc.data().Variance
+            var object = doc.data().Variant
             ul54polymerasevariants.push({ label: object, value: object })
             this.setState({ poly: ul54polymerasevariants })
           });
@@ -176,13 +220,13 @@ class CMVdb extends Component {
 
     var UL56terminase = []
     db
-      .collection('ul54terminasevariance')
+      .collection('ul56terminasevariants')
       .get()
       .then(snapshot => {
         snapshot
           .docs
           .forEach(doc => {
-            var object = doc.data().Variance
+            var object = doc.data().Variant
             UL56terminase.push({ label: object, value: object })
             this.setState({ term: UL56terminase })
           });
@@ -190,13 +234,13 @@ class CMVdb extends Component {
 
     var UL97phosphotransferase = []
     db
-      .collection('ul97phosphotransferasevariance')
+      .collection('ul97phosphotransferasevariants')
       .get()
       .then(snapshot => {
         snapshot
           .docs
           .forEach(doc => {
-            var object = doc.data().Variance
+            var object = doc.data().Variant
             UL97phosphotransferase.push({ label: object, value: object })
             this.setState({ phos: UL97phosphotransferase })
           });
@@ -204,8 +248,9 @@ class CMVdb extends Component {
   }
 
   onChangeSelectionDrug(value) {
+    let drugsarr = value.split(',')
     this.setState({
-      selecteddrugs: value.split(',')
+      selecteddrugs: drugsarr
     });
   }
 
@@ -232,7 +277,7 @@ class CMVdb extends Component {
     if (value !== '') {
       var termstate = value.split(',');
       for (let i = 0; i < termstate.length; i++) {
-        let docRef = db.collection("ul54terminasevariance").doc(termstate[i]);
+        let docRef = db.collection("ul56terminasevariants").doc(termstate[i]);
         docRef.get().then(function (doc) {
           if (doc.exists) {
             data.push(doc.data());
@@ -246,20 +291,23 @@ class CMVdb extends Component {
     //  console.log(value)
   }
 
-
-
   onChangeSelection97phos(value) {
-    this.setState({
-      selected96phos: value
-    });
-    //  console.log(value)
+    var data = [];
+    if (value !== '') {
+      var phosstate = value.split(',');
+      for (let i = 0; i < phosstate.length; i++) {
+        let docRef = db.collection("ul97phosphotransferasevariants").doc(phosstate[i]);
+        docRef.get().then(function (doc) {
+          if (doc.exists) {
+            data.push(doc.data());
+          }
+        }).catch(function (error) {
+          console.log("Error getting document:", error);
+        });
+      }
+    }
+    this.setState({ selected97phos: data })
   }
-  // setDataState(data) {
-  //   var inf = this.state.data;
-  //   inf.push(data);
-  //   this.setState({ data: inf });
-  // }
-
   handleSubmit() {
     if (this.state.selected54poly === [] &&
       this.state.selected56term === [] &&
@@ -272,18 +320,15 @@ class CMVdb extends Component {
         this.setState({
           selecteddrugs: [],
           selected54poly: [],
-          selected56term: []
+          selected56term: [],
+          selected97phos: []
         })
       }
       this.setState({ submitClicked: !this.state.submitClicked })
-      // this.setState(prevState => ({
-      //   submitClicked: !prevState.submitClicked
-      // }));
     }
   }
 
   render() {
-
     return (
       <div className="container" >
         {
@@ -291,7 +336,7 @@ class CMVdb extends Component {
             <div>
               <div>
                 <h2>Results:</h2>
-                <Results selecteddrugs={this.state.selecteddrugs} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
               </div>
             </div>
@@ -306,7 +351,7 @@ class CMVdb extends Component {
               <h4>UL56 - Terminase</h4>
               <MultiVarianceSelectField changeSelection={this.onChangeSelection56term.bind(this)} input={this.state.term}></MultiVarianceSelectField>
               <h4>UL97 - Phosphotransferase</h4>
-              <MultiVarianceSelectField changeSelection={this.onChangeSelection97phos.bind(this)} input={UL97Phosphotransferase}></MultiVarianceSelectField>
+              <MultiVarianceSelectField changeSelection={this.onChangeSelection97phos.bind(this)} input={this.state.phos}></MultiVarianceSelectField>
               <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
               {this.state.empty ?
                 <div><p>please enter a variant</p></div>
@@ -326,7 +371,10 @@ class Results extends Component {
     this.state = {
       selected54poly: this.props.selected54poly,
       selected56term: this.props.selected56term,
+      selected97phos: this.props.selected97phos,
       selecteddrugs: this.props.selecteddrugs,
+      selectedepistasis: [],
+      epistasis: this.props.epistasis,
       allvars: [],
       polyvarname: [],
       polyvarreference: [],
@@ -335,129 +383,140 @@ class Results extends Component {
     };
   }
 
-  // componentWillReceiveProps(nextProps) {
-  //   this.setState({ data: nextProps.data });
-  //   console.log(nextProps.data)
-  // }
-
-  componentDidMount() {
-  }
-
   componentWillMount() {
-
-    var polyvarname = []
-    var polyvarreference = []
-    for (let i = 0; i < this.state.selected54poly.length; i++) {
-      polyvarname.push(this.state.selected54poly[i].Variance)
-      polyvarreference.push(this.state.selected54poly[i].Reference)
-    }
-    this.setState({ polyvarname: polyvarname })
-    this.setState({ polyvarreference: polyvarreference })
-    var termvarname = []
-    var termvarreference = []
-    for (let i = 0; i < this.state.selected56term.length; i++) {
-      termvarname.push(this.state.selected56term[i].Variance)
-      termvarreference.push(this.state.selected56term[i].Reference)
-    }
-    console.log(this.state.selected54poly)
-    this.setState({ termvarname: termvarname })
-    this.setState({ termvarreference: termvarreference })
-
     var variants = this.state.selected54poly.concat(this.state.selected56term);
-    this.setState({ allvars: variants });
-    var drugobj = {};
-    var drugs = this.state.selecteddrugs;
-    for (let i = 0; i < drugs.length; i++) {
-      let drug = drugs[i]
-      drug = drug + "fold";
-      drugobj[drug] = 0;
+    variants = variants.concat(this.state.selected97phos)
+    for (let i = 0; i < this.state.epistasis.length; i++) {
+      let total = this.state.epistasis[i].Variant.length
+      let match = [];
+      for (let j = 0; j < this.state.epistasis[i].Variant.length; j++) {
+        for (let k = 0; k < variants.length; k++) {
+          if (variants[k].Variant === this.state.epistasis[i].Variant[j]) {
+            match.push(variants[k].Variant);
+          }
+        }
+      }
+      if (match.length === total) {
+        let selected54poly = this.state.selected54poly;
+        let selected56term = this.state.selected56term;
+        let selected97phos = this.state.selected97phos;
+        for (let i = 0; i < match.length; i++) {
+          variants = variants.filter(function (variant) {
+            return variant.Variant !== match[i];
+          });
+          selected54poly = selected54poly.filter(function (variant) {
+            return variant.Variant !== match[i];
+          });
+          selected56term = selected56term.filter(function (variant) {
+            return variant.Variant !== match[i];
+          });
+          console.log(selected56term)
+          selected97phos = selected97phos.filter(function (variant) {
+            return variant.Variant !== match[i];
+          });
+        }
+        variants.push(this.state.epistasis[i])
+        let curepi = this.state.selectedepistasis;
+        curepi.push(this.state.epistasis[i]);
+        this.setState({ selectedepistasis: curepi });
+        this.setState({ selected56term: selected56term })
+        this.setState({ selected97phos: selected97phos })
+        this.setState({ selected54poly: selected54poly })
+      }
     }
-    drugs = Object.keys(drugobj)
+    this.setState({ allvars: variants });
+    console.log(variants)
+    var drugs = this.state.selecteddrugs;
+    var folddata = [];
+    for (let i = 0; i < drugs.length; i++) {
+      var drugobj = {};
+      let drug = drugs[i]
+      drugs[i] = drug + "fold";
+      drugobj["drug"] = drug + "fold";
+      drugobj["fold"] = 0;
+      folddata.push(drugobj)
+    }
     for (let i = 0; i < variants.length; i++) {
-      for (let j = 0; j < drugs.length; j++) {
-        if (drugs[j] in variants[i]) {
-          drugobj[drugs[j]] = drugobj[drugs[j]] + variants[i][drugs[j]];
+      for (let j = 0; j < folddata.length; j++) {
+        if (folddata[j].drug in variants[i]) {
+          folddata[j].fold = folddata[j].fold + Number(variants[i][folddata[j].drug]);
         }
       }
     }
-    this.setState({ foldobj: drugobj })
+    this.setState({ foldobj: folddata })
   }
 
   render() {
-    // data = JSON.stringify(data
-    // console.log(typeof this.state.data[0].Variance)
-    //console.log(this.state.varname)
     return (
       <div>
-        <h5>Polymerase</h5>
+        {/* <h5>Polymerase</h5>
         <p>{this.state.polyvarname}</p>
         <p>{this.state.polyvarreference}</p>
         <h5>Terminase</h5>
         <p>{this.state.termvarname}</p>
-        <p>{this.state.termvarreference}</p>
+        <p>{this.state.termvarreference}</p> */}
         <h5>Drug Resistance Profile</h5>
-        <p>{JSON.stringify(this.state.foldobj)}</p>
         {
-          this.state.allvars.map((variant) =>
-            <VariantCard key={variant.Variance} obj={variant} variant={variant.Variance} drugs={this.state.selecteddrugs} comments={variant.Comments} reference={variant.Reference} />)
+          this.state.foldobj.map((drug) =>
+            <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
         }
+        <h4>UL54 Polymerase</h4>
+        <BootstrapTable data={this.state.selected54poly} exportCSV>
+          <TableHeaderColumn width='170' dataField='Variant' isKey filter={{ type: 'TextFilter' }}>Variant</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='ganciclovirfold'>Ganciclovir-GCV (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Reference'>Reference (PMID)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+        </BootstrapTable>
+        <h4>UL56 Terminase</h4>
+        <BootstrapTable data={this.state.selected56term} exportCSV>
+          <TableHeaderColumn width='170' dataField='Variant' isKey filter={{ type: 'TextFilter' }}>Variant</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+        </BootstrapTable>
+        <h4>UL97 Phosphotransferase</h4>
+        <BootstrapTable data={this.state.selected97phos} exportCSV>
+          <TableHeaderColumn width='170' dataField='Variant' isKey filter={{ type: 'TextFilter' }}>Variant</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='cidofovirfold'> Cidofovir (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+        </BootstrapTable>
+        <h4>Epistatic Variants</h4>
+        <BootstrapTable data={this.state.selectedepistasis} exportCSV>
+          <TableHeaderColumn width='170' dataField='Variant' isKey filter={{ type: 'TextFilter' }}>Variant</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+        </BootstrapTable>
       </div>
-
     )
   }
 }
 
-class VariantCard extends React.Component {
-
+class FoldCard extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      isHidden: true,
-      drugs: []
+      drug: this.props.drug,
+      fold: this.props.fold
     }
   }
-
-  toggleHidden() {
-    this.setState({
-      isHidden: !this.state.isHidden
-    })
-  }
-
-  componentDidMount() {
-    let drugs = []
-    for (let i = 0; i < this.props.drugs.length; i++) {
-      let curdrug = this.props.drugs[i] + "fold"
-      let curvar = this.props.obj
-      if (curdrug in curvar) {
-        let cur = this.props.drugs[i] + "fold";
-        let drug = {};
-        drug[this.props.drugs[i]] = this.props.obj[cur];
-        drugs.push(drug);
-      }
-    }
-    this.setState({ drugs: drugs })
-  }
-
   render() {
-    console.log(this.state.drugs)
-    var reference = this.props.reference.toString()
     return (
-      <div className="card">
-        <h6 onClick={this.toggleHidden.bind(this)} className="card-title">{this.props.variant}</h6>
-        {!this.state.isHidden &&
-          <div className="card-body">
-            <h7>Experimental Fold</h7>
-            {
-              this.state.drugs.map((drug, i) =>
-                <p key={i}> {JSON.stringify(drug)} </p>)
-
-            }
-            <hr />
-            <p className="card-text">Reference: {reference}</p>
-            <hr />
-            <p className="card-text">Comments: {this.props.comments}</p>
-          </div>
-        }
+      <div>
+        {/* <table>
+          <tr>
+            <th>{this.state.drug.replace("fold", "")}</th>
+            <td>{this.state.fold}</td>
+          </tr>
+        </table> */}
+        <h6>{this.state.drug.replace("fold", "")} = {this.state.fold}</h6>
       </div>
     )
   }
@@ -640,55 +699,6 @@ class Login extends Component {
     );
   }
 }
-
-const UL97Phosphotransferase = [
-  { label: 'L405P', value: 'L405P' },
-  { label: 'M460I', value: 'M460I' },
-  { label: 'M460T', value: 'M460T' },
-  { label: 'M460V', value: 'M460V' },
-  { label: 'V466G', value: 'V466G' },
-  { label: 'C518Y', value: 'C518Y' },
-  { label: 'H520Q', value: 'H520Q' },
-  { label: 'C592G', value: 'C592G' },
-  { label: 'A594E', value: 'A594E' },
-  { label: 'A594G', value: 'A594G' },
-  { label: 'A594P', value: 'A594P' },
-  { label: 'A594T', value: 'A594T' },
-  { label: 'A594V', value: 'A594V' },
-  { label: 'L595F', value: 'L595F' },
-  { label: 'L595S', value: 'L595S' },
-  { label: 'L595W', value: 'L595W' },
-  { label: 'del595', value: 'del595' },
-  { label: 'del595', value: 'del595' },
-  { label: 'E596G', value: 'E596G' },
-  { label: 'E596Y', value: 'E596Y' },
-  { label: 'G598S', value: 'G598S' },
-  { label: 'K599T', value: 'K599T' },
-  { label: 'del600', value: 'del600' },
-  { label: 'del601', value: 'del601' },
-  { label: 'C603R', value: 'C603R' },
-  { label: 'C603W', value: 'C603W' },
-  { label: 'C607F', value: 'C607F' },
-  { label: 'C607Y', value: 'C607Y' },
-  { label: 'I610T', value: 'I610T' },
-  { label: 'A613V', value: 'A613V' },
-  { label: 'M460L', value: 'M460L' },
-  { label: 'A590T', value: 'A590T' },
-  { label: 'del590', value: 'del590' },
-  { label: 'del590', value: 'del590' },
-  { label: 'A591D', value: 'A591D' },
-  { label: 'C592F', value: 'C592F' },
-  { label: 'L595T', value: 'L595T' },
-  { label: 'N597I', value: 'N597I' },
-  { label: 'del597', value: 'del597' },
-  { label: 'G598V', value: 'G598V' },
-  { label: 'K599M', value: 'K599M' },
-  { label: 'del600', value: 'del600' },
-  { label: 'del601', value: 'del601' },
-  { label: 'del601', value: 'del601' },
-  { label: 'C603Y', value: 'C603Y' },
-  { label: 'A606D', value: 'A606D' }
-];
 
 var MultiDrugSelectField = createClass({
   displayName: 'MultiSelectField',
