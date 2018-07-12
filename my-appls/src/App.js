@@ -384,6 +384,9 @@ class Results extends Component {
   }
 
   componentWillMount() {
+    var selected54poly = this.state.selected54poly;
+    var selected56term = this.state.selected56term;
+    var selected97phos = this.state.selected97phos;
     var variants = this.state.selected54poly.concat(this.state.selected56term);
     variants = variants.concat(this.state.selected97phos)
     for (let i = 0; i < this.state.epistasis.length; i++) {
@@ -397,9 +400,6 @@ class Results extends Component {
         }
       }
       if (match.length === total) {
-        let selected54poly = this.state.selected54poly;
-        let selected56term = this.state.selected56term;
-        let selected97phos = this.state.selected97phos;
         for (let i = 0; i < match.length; i++) {
           variants = variants.filter(function (variant) {
             return variant.Variant !== match[i];
@@ -424,6 +424,7 @@ class Results extends Component {
         this.setState({ selected54poly: selected54poly })
       }
     }
+    this.setState({ selected54poly: selected54poly });
     this.setState({ allvars: variants });
     console.log(variants)
     var drugs = this.state.selecteddrugs;
@@ -449,31 +450,32 @@ class Results extends Component {
   render() {
     return (
       <div>
-        {/* <h5>Polymerase</h5>
-        <p>{this.state.polyvarname}</p>
-        <p>{this.state.polyvarreference}</p>
-        <h5>Terminase</h5>
-        <p>{this.state.termvarname}</p>
-        <p>{this.state.termvarreference}</p> */}
         <h5>Drug Resistance Profile</h5>
-        {
-          this.state.foldobj.map((drug) =>
-            <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
-        }
-        <h4>UL54 Polymerase</h4>
-        <BootstrapTable data={this.state.selected54poly} exportCSV>
-          <TableHeaderColumn width='170' dataField='Variant' isKey filter={{ type: 'TextFilter' }}>Variant</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='ganciclovirfold'>Ganciclovir-GCV (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Reference'>Reference (PMID)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
-        </BootstrapTable>
+        <p>Fold change by drug</p>
+        <div className="drugProfile">
+          {
+            this.state.foldobj.map((drug) =>
+              <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
+          }
+        </div>
+        {/* {this.props.selected54poly && */}
+        <div>
+          <h4>UL54 Polymerase</h4>
+          <BootstrapTable data={this.state.selected54poly} exportCSV>
+            <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+            <TableHeaderColumn width='150' dataField='ganciclovirfold'>Ganciclovir-GCV (fold ratio)</TableHeaderColumn>
+            <TableHeaderColumn width='150' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+            <TableHeaderColumn width='150' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+            <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
+            <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn>
+            <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
+            <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+          </BootstrapTable>
+        </div>
+        {/* } */}
         <h4>UL56 Terminase</h4>
         <BootstrapTable data={this.state.selected56term} exportCSV>
-          <TableHeaderColumn width='170' dataField='Variant' isKey filter={{ type: 'TextFilter' }}>Variant</TableHeaderColumn>
+          <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn>
@@ -482,7 +484,7 @@ class Results extends Component {
         </BootstrapTable>
         <h4>UL97 Phosphotransferase</h4>
         <BootstrapTable data={this.state.selected97phos} exportCSV>
-          <TableHeaderColumn width='170' dataField='Variant' isKey filter={{ type: 'TextFilter' }}>Variant</TableHeaderColumn>
+          <TableHeaderColumn width='170' dataField='Variant' isKey>Variant</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='cidofovirfold'> Cidofovir (fold ratio)</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
@@ -490,14 +492,38 @@ class Results extends Component {
         </BootstrapTable>
         <h4>Epistatic Variants</h4>
         <BootstrapTable data={this.state.selectedepistasis} exportCSV>
-          <TableHeaderColumn width='170' dataField='Variant' isKey filter={{ type: 'TextFilter' }}>Variant</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
+          <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
         </BootstrapTable>
       </div>
     )
   }
 }
+
+class ActiveFormatter extends React.Component {
+  render() {
+    let link = "https://www.ncbi.nlm.nih.gov/pubmed/" + this.props.enumObject[0]
+    return (
+      //    this.props.enumObject.forEach((link) => {
+      <a href={link}>{this.props.enumObject[0]}</a>
+      //   })
+    );
+  }
+}
+
+function activeFormatter(cell, row, enumObject, index) {
+  console.log(`The row index: ${index}`);
+  //  console.log(enumObject)
+  console.log(cell)
+  // for (let i = 0; i < cell.length; i++) {
+  //   cell[i] = "https://www.ncbi.nlm.nih.gov/pubmed/" + cell[i];
+  // }
+  return (
+    <ActiveFormatter enumObject={cell} />
+  );
+}
+
 
 class FoldCard extends React.Component {
   constructor(props) {
@@ -516,7 +542,18 @@ class FoldCard extends React.Component {
             <td>{this.state.fold}</td>
           </tr>
         </table> */}
-        <h6>{this.state.drug.replace("fold", "")} = {this.state.fold}</h6>
+        <table className="table">
+          <tbody>
+            <tr>
+              <th>{this.state.drug.replace("fold", "")}</th>
+              <td>{this.state.fold.toFixed(2)}</td>
+            </tr>
+            {/* <tr>
+              <td>{this.state.fold}</td>
+            </tr> */}
+          </tbody>
+        </table>
+        {/* <h6>{this.state.drug.replace("fold", "")} = {this.state.fold}</h6> */}
       </div>
     )
   }
