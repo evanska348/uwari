@@ -139,31 +139,30 @@ class CMVdb extends Component {
   //lobucavir (LBV) 
   //adefovir (ADV)
   //valganciclovir (valGCV)
-  //V781I 110397!!
-  //M393R flag
-  //M393K flag
-  //L501F
-  //Y(I)722V
-  //H729Y
-  //Y751H
-  //V787I
+  // M393R flag
+  // M393K flag
+  // L501F
+  // Y(I)722V
+  // H729Y
+  // Y751H
+  // V787I
 
-  //R369G
-  //R369S
+  // R369G
+  // R369S
 
-  //Del591–594 3-10 range
-  //A594P
-  //G598S commented about clinical
-  //C603R	3.6–8.3
-  //M460L
-  //A590T possibly clinical
-  //del590 to 600 11158760 no fold ratio just ec50
-  //del590 to 603 - ratio not there - jcv
-  //A591D not in any of the papers
-  //C592F can't open the reference from 72
-  //L595T can't open 9207351
-  //N597I can't open 9697738
-  //del597 to 603 no data in only reference https://academic.oup.com/view-large/figure/89851975/186-6-760-tab004.jpeg
+  // Del591–594 3-10 range
+  // A594P
+  // G598S commented about clinical
+  // C603R	3.6–8.3
+  // M460L
+  // A590T possibly clinical
+  // del590 to 600 11158760 no fold ratio just ec50
+  // del590 to 603 - ratio not there - jcv
+  // A591D not in any of the papers
+  // C592F can't open the reference from 72
+  // L595T can't open 9207351
+  // N597I can't open 9697738
+  // del597 to 603 no data in the only reference https://academic.oup.com/view-large/figure/89851975/186-6-760-tab004.jpeg
 
 
 
@@ -453,10 +452,20 @@ class Results extends Component {
         <h5>Drug Resistance Profile</h5>
         <p>Fold change by drug</p>
         <div className="drugProfile">
-          {
-            this.state.foldobj.map((drug) =>
-              <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
-          }
+          <table className="table">
+            <thead>
+              <tr>
+                <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
+                <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                this.state.foldobj.map((drug) =>
+                  <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
+              }
+            </tbody>
+          </table>
         </div>
         {/* {this.props.selected54poly && */}
         <div>
@@ -479,7 +488,7 @@ class Results extends Component {
           <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
         </BootstrapTable>
         <h4>UL97 Phosphotransferase</h4>
@@ -487,14 +496,15 @@ class Results extends Component {
           <TableHeaderColumn width='170' dataField='Variant' isKey>Variant</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='cidofovirfold'> Cidofovir (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
         </BootstrapTable>
         <h4>Epistatic Variants</h4>
         <BootstrapTable data={this.state.selectedepistasis} exportCSV>
           <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
           <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
+          <TableHeaderColumn width='150' dataField='Comments' dataFormat={activeFormatter}>Comments</TableHeaderColumn>
         </BootstrapTable>
       </div>
     )
@@ -502,6 +512,26 @@ class Results extends Component {
 }
 
 class ActiveFormatter extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      paper: {}
+    }
+  }
+  componentWillMount() {
+    var results
+    var pmid = this.props.enumObject
+    let url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=" + this.props.enumObject[0] + "&retmode=json&tool=my_tool&email=my_email@example.com";
+    fetch(url)
+      .then((responseText) => responseText.json())
+      .then((response) => {
+        results = response.result.pmid
+        console.log(results)
+        this.setState({ paper: response })
+      })
+    // console.log(response.authors)
+  }
+
   render() {
     let link = "https://www.ncbi.nlm.nih.gov/pubmed/" + this.props.enumObject[0]
     return (
@@ -513,12 +543,14 @@ class ActiveFormatter extends React.Component {
 }
 
 function activeFormatter(cell, row, enumObject, index) {
+
   console.log(`The row index: ${index}`);
   //  console.log(enumObject)
   console.log(cell)
   // for (let i = 0; i < cell.length; i++) {
   //   cell[i] = "https://www.ncbi.nlm.nih.gov/pubmed/" + cell[i];
   // }
+
   return (
     <ActiveFormatter enumObject={cell} />
   );
@@ -534,27 +566,15 @@ class FoldCard extends React.Component {
     }
   }
   render() {
+    var fold = this.props.fold.toFixed(2)
+    if (fold == 0) {
+      fold = "No data"
+    }
     return (
-      <div>
-        {/* <table>
-          <tr>
-            <th>{this.state.drug.replace("fold", "")}</th>
-            <td>{this.state.fold}</td>
-          </tr>
-        </table> */}
-        <table className="table">
-          <tbody>
-            <tr>
-              <th>{this.state.drug.replace("fold", "")}</th>
-              <td>{this.state.fold.toFixed(2)}</td>
-            </tr>
-            {/* <tr>
-              <td>{this.state.fold}</td>
-            </tr> */}
-          </tbody>
-        </table>
-        {/* <h6>{this.state.drug.replace("fold", "")} = {this.state.fold}</h6> */}
-      </div>
+      < tr >
+        <th align="center" valign="top" rowSpan="1" colSpan="1">{this.state.drug.replace("fold", "")}</th>
+        <td align="left" valign="top" rowSpan="1" colSpan="1">{fold}</td>
+      </tr >
     )
   }
 }
