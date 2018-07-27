@@ -8,9 +8,16 @@ import Select from 'react-select';
 import createClass from 'create-react-class';
 import firebase from 'firebase';
 import 'firebase/auth';
-// import 'firebase/database';
+import { NavbarToggler, Collapse, Navbar, NavbarBrand, NavItem, NavbarNav, Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'mdbreact'
+import { Col, Container, Row, Footer } from 'mdbreact';
 import 'firebase/firestore';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table'
+import ScrollableAnchor from 'react-scrollable-anchor'
+import 'font-awesome/css/font-awesome.min.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'mdbreact/dist/css/mdb.css';
+
+//ssh evanzhao@vergil.u.washington.edu
 
 var config = {
   apiKey: "AIzaSyBGflsX38vQ4SVYcsPDXySUmIWZFnbIwao",
@@ -32,8 +39,13 @@ class App extends Component {
     this.handleLogout = this.handleLogout.bind(this);
     this.handleUser = this.handleUser.bind(this);
     this.state = {
-      user: ''
+      user: '',
+      collapse: false,
+      isWideEnough: false,
+      dropdownOpen: false
     };
+    this.onClick = this.onClick.bind(this);
+    this.toggle = this.toggle.bind(this);
   }
 
   //Handles Logout
@@ -58,59 +70,130 @@ class App extends Component {
       user: data
     });
   }
+
+  onClick() {
+    this.setState({
+      collapse: !this.state.collapse,
+    });
+  }
+
+  toggle() {
+    this.setState({
+      dropdownOpen: !this.state.dropdownOpen
+    });
+  }
+
   render() {
     return (
-      <div>
-        <header>
-          <h1 className="display-4">Cytomegalovirus Drug Resistance Database</h1>
-          <Router>
-            <div className="nav">
-              <NavLink activeClassName="active" activeStyle={{ color: 'grey', borderBottom: '1px solid grey' }} style={{ color: 'black' }} to="/WelcomePage">
-                <div className="pageslabel">Welcome</div>
-              </NavLink>
-              <NavLink activeClassName="active" activeStyle={{ color: 'grey', borderBottom: '1px solid grey' }} style={{ color: 'black' }} to="/CMVdb">
-                <div className="pageslabel">CMVdb Program</div>
-              </NavLink>
-              {this.state.user === '' ?
-                <div>
-                  <NavLink activeClassName="active" activeStyle={{ color: 'black', borderBottom: '1px solid grey' }} style={{ color: 'black' }} to="/login">
-                    <div className="pageslabel">Login</div>
-                  </NavLink>
-                </div>
-                :
-                <div>
-                  <NavLink activeClassName="active" user={this.state.user} activeStyle={{ color: 'grey', borderBottom: '1px solid grey' }} style={{ color: 'black' }} to="/AddVariants">
-                    <div className="pageslabel">Add Variants</div>
-                  </NavLink>
-                  <button type='button' className="btn btn-danger btn-sm" onClick={this.handleLogout}>Logout</button>
-                </div>
-              }
-              <Route path="/WelcomePage" component={WelcomePage} />
-              <Route path="/CMVdb" component={CMVdb} />
-              <Route path="/AddVariants" component={AddVariants} />
-              <Route path="/login" render={(props) => (
-                <Login {...props} handlerFromParent={this.handleUser} />
-              )} />
-              {/* <Route path="/login" component={Login} /> */}
-            </div>
-          </Router>
-        </header>
-      </div>
+      <div className="parent" >
+        <div id="content">
+          <header>
+            {/* <h1 className="display-4">Cytomegalovirus Drug Resistance Database</h1> */}
+            <Navbar color="teal" dark expand="md" scrolling>
+              <NavbarBrand href="/WelcomePage">
+                <strong>Cytomegalovirus Drug Resistance Database</strong>
+              </NavbarBrand>
+              {!this.state.isWideEnough && <NavbarToggler onClick={this.onClick} />}
+              <Collapse navbar>
+                <NavbarNav left>
+                  <NavItem>
+                    <NavLink className="nav-link waves-effect waves-light" aria-haspopup="true" aria-expanded="false" to="/WelcomePage">Home</NavLink>
+                  </NavItem>
+                  <NavItem>
+                    <NavLink className="nav-link waves-effect waves-light" to="/CMVdb">CMVdb</NavLink>
+                  </NavItem>
+                </NavbarNav>
+                <NavbarNav right>
+                  <NavItem>
+                    <Dropdown toggle={this.toggle}>
+                      <DropdownToggle nav caret><i className="fa fa-user" aria-hidden="true"></i></DropdownToggle>
+                      <DropdownMenu right>
+                        {this.state.user === '' ?
+                          <div>
+                            <DropdownItem>
+                              {/* <NavLink className="nav-link waves-effect waves-light" to="#" disabled>Login to add Variants</NavLink> */}
+                            </DropdownItem>
+                            <DropdownItem>
+                              <NavLink className="nav-link waves-effect waves-light" to="/login">Login</NavLink>
+                            </DropdownItem>
+                          </div>
+                          :
+                          <div>
+                            <DropdownItem>
+                              <NavLink className="nav-link waves-effect waves-light" to="/AddVariants">Add Variants</NavLink>
+                            </DropdownItem>
+                            <DropdownItem>
+                              <NavLink className="logoutButton" onClick={this.handleLogout} to="/login">Logout</NavLink>
+                            </DropdownItem>
+                            {/* <button type='button' className="btn btn-danger btn-sm" onClick={this.handleLogout}>Logout</button> */}
+                          </div>
+                        }
+                      </DropdownMenu>
+                    </Dropdown>
+                  </NavItem>
+                </NavbarNav>
+              </Collapse>
+            </Navbar>
+            <Route path="/WelcomePage" component={WelcomePage} />
+            <Route path="/CMVdb" component={CMVdb} />
+            <Route path="/AddVariants" component={AddVariants} />
+            <Route path="/login" render={(props) => (
+              <Login {...props} handlerFromParent={this.handleUser} />
+            )} />
+          </header>
+        </div>
+        <Footer id="footer" color="teal" className="font-small pt-4 mt-4" fixed="bottom">
+          <Container className="text-left">
+            <Row>
+              <Col sm="6">
+                <h5 className="title">Footer</h5>
+                <p>Stuff in footer.</p>
+              </Col>
+              <Col sm="6">
+                <h5 className="title">Links</h5>
+                <ul>
+                  <li className="list-unstyled"><a href="https://www.viracor-eurofins.com/media/1622/cmv-avr-mutations-references_1217_viracor-eurofins.pdf">Viracor</a></li>
+                  <li className="list-unstyled"><a href="https://depts.washington.edu/uwviro/">UW Virology</a></li>
+                </ul>
+              </Col>
+            </Row>
+          </Container>
+          <div className="footer-copyright text-center">
+            <Container fluid>
+              {(new Date().getFullYear())} <a href="#"> UW </a>
+            </Container>
+          </div>
+        </Footer>
+      </div >
 
     );
   }
 }
 
 
-
 class WelcomePage extends Component {
   render() {
     return (
-      <div className="container">
-        <h3 className='pageheader'>
-          Welcome!
-        </h3>
-        <p>This page looks for CMV drug resistance</p>
+      <div>
+        <div className="welcomeContainer darken-pseudo darken-with-text">
+          <div className="welcomeCover">
+            <h3>
+              <strong>Welcome!</strong>
+            </h3>
+            <strong>
+              <p>This page looks for CMV drug resistance</p>
+            </strong>
+            <a className="ct-btn-scroll ct-js-btn-scroll" href="#section2"><img alt="Arrow Down Icon" src="https://www.solodev.com/assets/anchor/arrow-down.png" /></a>
+          </div>
+        </div>
+        <div className="welcomeContent">
+          <ScrollableAnchor id={'section2'}>
+            <h3> About </h3>
+          </ScrollableAnchor>
+          <p>
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+          </p>
+        </div>
       </div>
     );
   }
@@ -329,12 +412,13 @@ class CMVdb extends Component {
 
   render() {
     return (
+
       <div className="container" >
         {
           this.state.submitClicked ?
             <div>
               <div>
-                <h2>Results:</h2>
+                <h2 className="pageheader">Results:</h2>
                 <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
               </div>
@@ -515,29 +599,60 @@ class ActiveFormatter extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      paper: {}
+      authors: [],
+      year: '',
+      publication: '',
     }
   }
   componentWillMount() {
-    var results
-    var pmid = this.props.enumObject
     let url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=" + this.props.enumObject[0] + "&retmode=json&tool=my_tool&email=my_email@example.com";
     fetch(url)
       .then((responseText) => responseText.json())
       .then((response) => {
-        results = response.result.pmid
-        console.log(results)
-        this.setState({ paper: response })
+        let results = response.result[this.props.enumObject[0]]
+        let authors = results.authors
+        let pubdate = results.pubdate
+        let source = results.source
+        this.setState({ authors: authors })
+        this.setState({ year: pubdate })
+        this.setState({ publication: source })
       })
-    // console.log(response.authors)
   }
 
   render() {
     let link = "https://www.ncbi.nlm.nih.gov/pubmed/" + this.props.enumObject[0]
     return (
-      //    this.props.enumObject.forEach((link) => {
-      <a href={link}>{this.props.enumObject[0]}</a>
-      //   })
+      <FormattedCitation authors={this.state.authors} year={this.state.year.substr(0, this.state.year.indexOf(" "))} publication={this.state.publication} link={link}></FormattedCitation>
+      // <a href={link}>{this.state.lastnames} {this.state.year} {this.state.publication}</a>
+    );
+  }
+}
+
+class FormattedCitation extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      authors: this.props.authors,
+      year: this.props.year,
+      lastnames: ''
+    }
+  }
+
+  render() {
+    console.log(this.props.authors)
+    let authors = this.props.authors.slice(0, 3)
+    var lastnames = '';
+    if (authors.length !== 0) {
+      lastnames = authors[0].name.substr(0, authors[0].name.indexOf(" "));
+      for (let i = 1; i < authors.length; i++) {
+        lastnames += ", " + authors[i].name.substr(0, authors[i].name.indexOf(" "));
+      }
+    }
+    if (this.props.authors.length > 3) {
+      lastnames += ", et al."
+    }
+    return (
+      <a href={this.props.link} > {lastnames}, {this.props.publication}, {this.props.year}</a>
     );
   }
 }
@@ -584,42 +699,160 @@ class AddVariants extends Component {
     super(props);
     this.state = {
       user: this.props.user,
+      gene: '',
+      variant: '',
+      fold: '',
+      reference: '',
+      comments: '',
+      success: '',
+      failure: '',
+      selecteddrugs: [],
+      drugs: []
     };
   }
 
-  componentWillMount() {
-    this.setState({ user: this.props.user });
+  onChangeSelectionGene(value) {
+    this.setState({
+      gene: value
+    });
   }
 
+  onChangeSelectionDrug(value) {
+    let drugsarr = value.split(',')
+    this.setState({
+      selecteddrugs: drugsarr
+    });
+  }
+
+  handleVariant() {
+    let data = {}
+    for (let i = 0; i < this.state.selecteddrugs.length; i++) {
+      let drug = this.state.selecteddrugs[i] + "fold";
+      let _state = this.state.selecteddrugs[i]
+      let fold = Number(this.state[_state])
+      console.log(fold)
+      data[drug] = fold
+    }
+    data["Variant"] = this.state.variant;
+    data["Reference"] = this.state.reference;
+    data["Comments"] = this.state.comments;
+    db.collection(this.state.gene).doc(this.state.variant).set(data)
+      .then(function () {
+        this.setState({ success: "Document successfully written!" });
+      })
+      .catch(function () {
+        console.log("Error writing document");
+      });
+
+  }
+
+  handleChange(event) {
+    let field = event.target.name; //which input
+    let value = event.target.value; //what value
+    let changes = {}; //object to hold changes
+    changes[field] = value; //change this field
+    this.setState(changes); //update state
+  }
+
+  componentWillMount() {
+    var drugarray = []
+    db
+      .collection('drug')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = JSON.parse(doc._document.data)
+            var keys = Object.keys(object);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+              drugarray.push({
+                label: keys[i],
+                value: keys[i]
+              })
+            }
+            this.setState({ drugs: drugarray })
+          });
+      });
+  }
+
+
   render() {
-    console.log(this.state.user)
+    console.log(this.state.adefovir)
     return (
       <div className="container">
         <h3 className='pageheader'>Add Variants to the Database</h3>
         <form>
+
+          <p>Gene:</p>
+          <GeneSelectField changeSelection={this.onChangeSelectionGene.bind(this)}></GeneSelectField>
+          <hr />
           <label>
             Variant:
-          <input className="form-control" type="text" name="Variant" />
+            <input type="variant" className="form-control"
+              name="variant"
+              value={this.state.variant}
+              onChange={(event) => { this.handleChange(event) }}
+            />
           </label>
           <hr />
-          <label>
-            Fold:
-          <input className="form-control" type="text" name="Fold" />
-          </label>
+          <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
+          {this.state.selecteddrugs.map(element => {
+            return <div key={element}>
+              <hr />
+              <p>{element} fold:</p>
+              <input type={element} className="form-control"
+                name={element}
+                value={this.state.element}
+                onChange={(event) => { this.handleChange(event) }}
+              />
+            </div>
+          })}
           <hr />
           <label>
-            Reference:
-          <input className="form-control" type="text" name="Reference" />
+            Reference (PMID):
+            <input type="reference" className="form-control"
+              name="reference"
+              value={this.state.reference}
+              onChange={(event) => { this.handleChange(event) }}
+            />
           </label>
           <hr />
           <label>
             Comments:
-          <input className="form-control" type="text" name="Comments" />
+          <input type="comments" className="form-control"
+              name="comments"
+              value={this.state.comments}
+              onChange={(event) => { this.handleChange(event) }}
+            />
           </label>
           <hr />
-          <input className="btn btn-primary" type="submit" value="Submit" />
+          <div className="form-group">
+            <button type='button' className="btn btn-primary mr-2" onClick={() => this.handleVariant()}>
+              Submit Variant
+                 </button>
+          </div>
+          {this.state.failure &&
+            <p className="alert alert-danger">{this.state.errorMessage}</p>
+          }
+
+          {this.state.success &&
+            <div className="alert alert-success" id='loggedin'><h5>Logged in as {this.state.user.email}</h5></div>
+          }
         </form>
-      </div>
+      </div >
+    )
+  }
+}
+
+class FoldInput extends Component {
+  constructor(props) {
+    super(props);
+  }
+  render() {
+    return (
+      <p>{this.props.drug}</p>
     )
   }
 }
@@ -630,7 +863,8 @@ class Login extends Component {
     this.state = {
       email: '',
       password: '',
-      username: ''
+      username: '',
+      code: ''
     };
   }
   componentDidMount() {
@@ -642,7 +876,7 @@ class Login extends Component {
           errorMessage: '',
           email: '',
           password: '',
-          username: ''
+          username: '',
         });
         this.props.handlerFromParent(this.state.user);
       }
@@ -659,24 +893,28 @@ class Login extends Component {
   handleSignUp() {
 
     /* Create a new user and save their information */
-    firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.password)
-      .then(firebaseUser => {
-        //include information (for app-level content)
-        let profilePromise = firebaseUser.updateProfile({
-          displayName: this.state.email,
-        }); //return promise for chaining
+    if (this.state.code === 'UW206') {
+      firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.password)
+        .then(firebaseUser => {
+          //include information (for app-level content)
+          let profilePromise = firebaseUser.updateProfile({
+            displayName: this.state.email,
+          }); //return promise for chaining
 
-        return profilePromise;
-      })
-      .then(firebaseUser => {
-        this.setState({
-          user: firebase.auth().currentUser
+          return profilePromise;
         })
-      })
-      .catch((err) => {
-        console.log(err);
-        this.setState({ errorMessage: err.message })
-      })
+        .then(firebaseUser => {
+          this.setState({
+            user: firebase.auth().currentUser
+          })
+        })
+        .catch((err) => {
+          console.log(err);
+          this.setState({ errorMessage: err.message })
+        })
+    } else {
+      this.setState({ errorMessage: "Incorrect sign up code" })
+    }
   }
 
 
@@ -735,14 +973,14 @@ class Login extends Component {
           />
         </div>
 
-        {/* <div className="form-group">
-          <label>Username: </label>
-          <input className="form-control"
-            name="username"
-            value={this.state.username}
+        <div className="form-group">
+          <label>Sign Up Code (Ignore if signing in): </label>
+          <input type="code" className="form-control"
+            name="code"
+            value={this.state.code}
             onChange={(event) => { this.handleChange(event) }}
           />
-        </div> */}
+        </div>
 
         <div className="form-group">
           <button className="btn btn-primary mr-2" onClick={() => this.handleSignUp()}>
@@ -839,114 +1077,50 @@ var MultiVarianceSelectField = createClass({
   }
 });
 
-
-const STATES = [
-  { label: 'UL54-Polymerase', value: 'ul54polymerase' },
-  { label: 'UL56-Terminase', value: 'ul56terminase' },
-  { label: 'UL97-Phosphotransferase', value: 'ul97phosphotransferase' },
-];
-
-var StatesField = createClass({
-  displayName: 'StatesField',
+var GeneSelectField = createClass({
+  displayName: 'SingleSelectField',
   propTypes: {
     label: PropTypes.string,
-    searchable: PropTypes.bool,
-  },
-  getDefaultProps() {
-    return {
-      label: 'States:',
-      searchable: true,
-    };
   },
   getInitialState() {
     return {
-      country: 'AU',
+      removeSelected: true,
       disabled: false,
-      searchable: this.props.searchable,
-      selectValue: 'new-south-wales',
-      clearable: true,
+      stayOpen: false,
+      multi: false,
+      value: undefined,
       rtl: false,
     };
   },
-  clearValue(e) {
-    this.select.setInputValue('');
+  handleSelectChange(value) {
+    this.setState({ value });
+    this.props.changeSelection(value);
   },
-  switchCountry(e) {
-    var newCountry = e.target.value;
-    this.setState({
-      country: newCountry,
-      selectValue: null,
-    });
-  },
-  updateValue(newValue) {
-    this.setState({
-      selectValue: newValue,
-    });
-  },
-  focusStateSelect() {
-    this.select.focus();
-  },
-  toggleCheckbox(e) {
-    let newState = {};
-    newState[e.target.name] = e.target.checked;
-    this.setState(newState);
-  },
+
   render() {
-    var options = STATES[this.state.country];
+    const { disabled, stayOpen, value } = this.state;
+    const options = [
+      { value: 'ul54polymerasevariance', label: 'UL54 Polymerase' },
+      { value: 'ul56terminasevariants', label: 'UL56 Terminase' },
+      { value: 'ul97phosphotrasferasevariants', label: 'UL97 Phosphotransferase' }
+    ]
     return (
       <div className="section">
-        <h3 className="section-heading">{this.props.label} <a href="https://github.com/JedWatson/react-select/tree/master/examples/src/components/States.js">(Source)</a></h3>
         <Select
-          id="state-select"
-          ref={(ref) => { this.select = ref; }}
-          onBlurResetsInput={false}
-          onSelectResetsInput={false}
-          autoFocus
+          closeOnSelect={stayOpen}
+          disabled={disabled}
+          onChange={this.handleSelectChange}
           options={options}
-          simpleValue
-          clearable={this.state.clearable}
-          name="selected-state"
-          disabled={this.state.disabled}
-          value={this.state.selectValue}
-          onChange={this.updateValue}
+          placeholder="Choose a gene"
+          removeSelected={this.state.removeSelected}
           rtl={this.state.rtl}
-          searchable={this.state.searchable}
+          simpleValue
+          value={value}
         />
-        <button style={{ marginTop: '15px' }} type="button" onClick={this.focusStateSelect}>Focus Select</button>
-        <button style={{ marginTop: '15px' }} type="button" onClick={this.clearValue}>Clear Value</button>
-
-        <div className="checkbox-list">
-
-          <label className="checkbox">
-            <input type="checkbox" className="checkbox-control" name="searchable" checked={this.state.searchable} onChange={this.toggleCheckbox} />
-            <span className="checkbox-label">Searchable</span>
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" className="checkbox-control" name="disabled" checked={this.state.disabled} onChange={this.toggleCheckbox} />
-            <span className="checkbox-label">Disabled</span>
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" className="checkbox-control" name="clearable" checked={this.state.clearable} onChange={this.toggleCheckbox} />
-            <span className="checkbox-label">Clearable</span>
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" className="checkbox-control" name="rtl" checked={this.state.rtl} onChange={this.toggleCheckbox} />
-            <span className="checkbox-label">rtl</span>
-          </label>
-        </div>
-        <div className="checkbox-list">
-          <label className="checkbox">
-            <input type="radio" className="checkbox-control" checked={this.state.country === 'AU'} value="AU" onChange={this.switchCountry} />
-            <span className="checkbox-label">Australia</span>
-          </label>
-          <label className="checkbox">
-            <input type="radio" className="checkbox-control" checked={this.state.country === 'US'} value="US" onChange={this.switchCountry} />
-            <span className="checkbox-label">United States</span>
-          </label>
-        </div>
       </div>
     );
   }
 });
 
 export default App;
+
