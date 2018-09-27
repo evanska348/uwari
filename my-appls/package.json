@@ -9,7 +9,7 @@
     "firebase": "^5.0.4",
     "firestorter": "^0.14.0",
     "gh-pages": "^1.2.0",
-    "mdbreact": "^4.6.0",
+    "mdbreact": "^4.6.1",
     "minified": "^1.0.1",
     "mobx": "^5.0.3",
     "mobx-react": "^5.2.3",

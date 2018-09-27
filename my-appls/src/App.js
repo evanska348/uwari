@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
-import './App.css';
 import 'bootstrap/dist/css/bootstrap.css';
-import { BrowserRouter as Router, Route } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import Select from 'react-select';
@@ -16,6 +15,7 @@ import ScrollableAnchor from 'react-scrollable-anchor'
 import 'font-awesome/css/font-awesome.min.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'mdbreact/dist/css/mdb.css';
+import './App.css';
 
 //ssh evanzhao@vergil.u.washington.edu
 
@@ -42,10 +42,33 @@ class App extends Component {
       user: '',
       collapse: false,
       isWideEnough: false,
-      dropdownOpen: false
+      dropdownOpen: false,
+      drugs: []
     };
     this.onClick = this.onClick.bind(this);
     this.toggle = this.toggle.bind(this);
+  }
+  componentWillMount() {
+    var drugarray = []
+    db
+      .collection('drug')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = JSON.parse(doc._document.data)
+            var keys = Object.keys(object);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+              drugarray.push({
+                label: keys[i],
+                value: keys[i]
+              })
+            }
+            this.setState({ drugs: drugarray })
+          });
+      });
   }
 
   //Handles Logout
@@ -57,12 +80,6 @@ class App extends Component {
       .catch((err) => {
         console.log(err)
       })
-  }
-
-  toggle(event) {
-    this.setState({
-      checkboxState: !this.state.checkboxState
-    });
   }
 
   handleUser(data) {
@@ -102,6 +119,22 @@ class App extends Component {
                   <NavItem>
                     <NavLink className="nav-link waves-effect waves-light" to="/CMVdb">CMVdb</NavLink>
                   </NavItem>
+                  <NavItem>
+                    <NavLink className="nav-link waves-effect waves-light" to="/HSV1db">HSV-1db</NavLink>
+                  </NavItem>
+                  <NavItem>
+                    <NavLink className="nav-link waves-effect waves-light" to="/HSV2db">HSV-2db</NavLink>
+                  </NavItem>
+                  <NavItem>
+                    <Dropdown>
+                      <DropdownToggle nav caret>File Input</DropdownToggle>
+                      <DropdownMenu>
+                        <DropdownItem href="/CSVFileInput">CMV</DropdownItem>
+                        <DropdownItem href="/HSV1FileInput">HSV-1</DropdownItem>
+                        <DropdownItem href="/HSV2FileInput">HSV-2</DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
+                  </NavItem>
                 </NavbarNav>
                 <NavbarNav right>
                   <NavItem>
@@ -136,7 +169,13 @@ class App extends Component {
             </Navbar>
             <Route path="/WelcomePage" component={WelcomePage} />
             <Route path="/CMVdb" component={CMVdb} />
+            <Route path="/HSV1db" component={HSV1db} />
+            <Route path="/HSV2db" component={HSV2db} />
             <Route path="/AddVariants" component={AddVariants} />
+            <Route path="/CSVFileInput" component={CSVFileInput} />
+            <Route path="/HSV1FileInput" component={HSV1FileInput} />
+            <Route path="/HSV2FileInput" component={HSV2FileInput} />
+            <Route path="/Results" component={Results} />
             <Route path="/login" render={(props) => (
               <Login {...props} handlerFromParent={this.handleUser} />
             )} />
@@ -146,8 +185,8 @@ class App extends Component {
           <Container className="text-left">
             <Row>
               <Col sm="6">
-                <h5 className="title">Footer</h5>
-                <p>Stuff in footer.</p>
+                <h5 className="title">Emails</h5>
+                <p>evanzhao@uw.edu</p>
               </Col>
               <Col sm="6">
                 <h5 className="title">Links</h5>
@@ -160,7 +199,7 @@ class App extends Component {
           </Container>
           <div className="footer-copyright text-center">
             <Container fluid>
-              {(new Date().getFullYear())} <a href="#"> UW </a>
+              {(new Date().getFullYear())} <a href="https://www.washington.edu/"> UW </a>
             </Container>
           </div>
         </Footer>
@@ -169,7 +208,6 @@ class App extends Component {
     );
   }
 }
-
 
 class WelcomePage extends Component {
   render() {
@@ -199,6 +237,503 @@ class WelcomePage extends Component {
   }
 }
 
+class HSV2FileInput extends Component {
+
+  constructor() {
+    super();
+    this.state = {
+      submitClicked: false,
+    }
+  }
+
+  handleSubmit() {
+    this.setState({ submitClicked: !this.state.submitClicked })
+  }
+
+  render() {
+    return (
+      <div className="container">
+        {
+          this.state.submitClicked ?
+            <div>
+              <div>
+                <h2 className="pageheader">Results:</h2>
+                <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+              </div>
+            </div>
+            :
+            <div>
+              <h2 className="pageheader">HSV-2 File Input</h2>
+              <input type="file"></input>
+              <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary  fileSubmit" type="submit">Analyze</button>
+            </div>
+        }
+      </div>
+    )
+  }
+}
+
+class HSV1FileInput extends Component {
+
+  constructor() {
+    super();
+    this.state = {
+      submitClicked: false,
+    }
+  }
+
+  handleSubmit() {
+    this.setState({ submitClicked: !this.state.submitClicked })
+  }
+
+  render() {
+    return (
+      <div className="container">
+        {
+          this.state.submitClicked ?
+            <div>
+              <div>
+                <h2 className="pageheader">Results:</h2>
+                <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+              </div>
+            </div>
+            :
+            <div>
+              <h2 className="pageheader">HSV-1 File Input</h2>
+              <input type="file"></input>
+              <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary  fileSubmit" type="submit">Analyze</button>
+            </div>
+        }
+      </div>
+    )
+  }
+}
+
+class CSVFileInput extends Component {
+
+  constructor() {
+    super();
+    this.state = {
+      submitClicked: false,
+    }
+  }
+
+  handleSubmit() {
+    this.setState({ submitClicked: !this.state.submitClicked })
+  }
+
+  render() {
+    return (
+      <div className="container">
+        {
+          this.state.submitClicked ?
+            <div>
+              <div>
+                <h2 className="pageheader">Results:</h2>
+                <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+              </div>
+            </div>
+            :
+            <div>
+              <h2 className="pageheader"> CMV File Input</h2>
+              <input type="file"></input>
+              <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze</button>
+            </div>
+        }
+      </div>
+    )
+  }
+}
+
+class HSV1db extends Component {
+
+  constructor() {
+    super();
+    this.state = {
+      drugs: [],
+      selecteddrugs: [],
+      selectedPolymerase: [],
+      selectedThymidine: [],
+      epistasis: [],
+      poly: [],
+      thymid: [],
+      loaded: false
+    }
+  }
+
+  componentWillMount() {
+    var drugarray = [];
+    var drugobj = [];
+    db
+      .collection('HSVdrug')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = JSON.parse(doc._document.data)
+            var keys = Object.keys(object);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+              drugarray.push(keys[i])
+              drugobj.push({
+                label: keys[i],
+                value: keys[i]
+              })
+            }
+            this.setState({ drugs: drugobj })
+            this.setState({ selecteddrugs: drugarray })
+            this.setState({
+              loaded: true
+            });
+          });
+      });
+    var epistasis = []
+    db
+      .collection('epistaticvariants')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data()
+            epistasis.push(object)
+            this.setState({ epistasis: epistasis });
+          });
+      });
+  }
+
+  onChangeSelectionDrug(value) {
+    let drugsarr = value.split(',');
+    this.setState({
+      selecteddrugs: drugsarr
+    });
+  }
+
+  onChangeSelectionThymidine(value) {
+    var data = [];
+    if (value !== '') {
+      var thymidinestate = value.split(',');
+      for (let i = 0; i < thymidinestate.length; i++) {
+        let docRef = db.collection("HSV1resistance").doc("HSV1resistance").collection("HSV1ThymidineKinase").doc(thymidinestate[i]);
+        docRef.get().then(function (doc) {
+          if (doc.exists) {
+            data.push(doc.data());
+          }
+        }).catch(function (error) {
+          console.log("Error getting document:", error);
+        });
+      }
+    }
+    this.setState({ selectedThymidine: data })
+  }
+
+  onChangeSelectionPolymerase(value) {
+    var data = [];
+    if (value !== '') {
+      var polystate = value.split(',');
+      for (let i = 0; i < polystate.length; i++) {
+        let docRef = db.collection("HSV1resistance").doc("HSV1resistance").collection("HSV1Polymerase").doc(polystate[i]);
+        docRef.get().then(function (doc) {
+          if (doc.exists) {
+            data.push(doc.data());
+          }
+        }).catch(function (error) {
+          console.log("Error getting document:", error);
+        });
+      }
+    }
+    this.setState({ selectedPolymerase: data })
+    console.log(this.state.selectedPolymerase)
+  }
+
+  componentDidMount() {
+    var HSV1ThymidineKinase = []
+    db
+      .collection('HSV1resistance')
+      .doc("HSV1resistance")
+      .collection("HSV1ThymidineKinase")
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            HSV1ThymidineKinase.push({ label: object, value: object })
+            this.setState({ poly: HSV1ThymidineKinase })
+          });
+      });
+
+    var HSV1Polymerase = []
+    db
+      .collection('HSV1resistance')
+      .doc("HSV1resistance")
+      .collection("HSV1Polymerase")
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            HSV1Polymerase.push({ label: object, value: object })
+            this.setState({ term: HSV1Polymerase })
+          });
+      });
+  }
+
+  handleSubmit() {
+    if (this.state.selectedPolymerase === [] &&
+      this.state.selectedThymidine === []) {
+      this.setState({ empty: true });
+    } else {
+      let drugarray = [];
+      for (let i = 0; i < this.state.drugs.length; i++) {
+        drugarray.push(this.state.drugs[i][0])
+      }
+      this.setState({ empty: false });
+      if (this.state.submitClicked === true) {
+        this.setState({
+          selecteddrugs: drugarray,
+          selectedPolymerase: [],
+          selectedThymidine: []
+        })
+      }
+      this.setState({ submitClicked: !this.state.submitClicked })
+    }
+  }
+
+  render() {
+    if (this.state.loaded) {
+
+      return (
+        <div className="container">
+          {
+            this.state.submitClicked ?
+              <div>
+                <HSVResults selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase} isClicked={this.state.submitClicked}></HSVResults>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+              </div>
+              :
+              <div>
+                <h3 className='pageheader'><strong>Genotypic Resistance Interpretation Algorithm HSV-1</strong></h3>
+                <p className='druglabel'>Drug Selection</p>
+                <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
+                <h3 className='druglabel'><strong>Mutation Selection</strong></h3>
+                <h3><strong>UL23 - Thymidine Kinase</strong></h3>
+                <MultiVarianceSelectField changeSelection={this.onChangeSelectionThymidine.bind(this)} input={this.state.poly}></MultiVarianceSelectField>
+                <h3><strong>UL30 - DNA Polymerase</strong></h3>
+                <MultiVarianceSelectField changeSelection={this.onChangeSelectionPolymerase.bind(this)} input={this.state.term}></MultiVarianceSelectField>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
+              </div>
+          }
+        </div>
+      )
+    } else {
+      return (
+        <div className="loaderContainer">
+          <div className="loader"></div>
+        </div>
+      )
+    }
+  }
+}
+
+class HSV2db extends Component {
+
+  constructor() {
+    super();
+    this.state = {
+      drugs: [],
+      selecteddrugs: [],
+      selectedPolymerase: [],
+      selectedThymidine: [],
+      submitClicked: false,
+      epistasis: [],
+      poly: [],
+      thymid: [],
+      loaded: false
+    }
+  }
+
+
+  componentWillMount() {
+    var drugarray = [];
+    var drugobj = [];
+    db
+      .collection('HSVdrug')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = JSON.parse(doc._document.data)
+            var keys = Object.keys(object);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+              drugarray.push(keys[i])
+              drugobj.push({
+                label: keys[i],
+                value: keys[i]
+              })
+            }
+            this.setState({ drugs: drugobj })
+            this.setState({ selecteddrugs: drugarray })
+            this.setState({
+              loaded: true
+            });
+          });
+      });
+    var epistasis = []
+    db
+      .collection('epistaticvariants')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data()
+            epistasis.push(object)
+            this.setState({ epistasis: epistasis });
+          });
+      });
+  }
+
+  onChangeSelectionDrug(value) {
+    let drugsarr = value.split(',');
+    this.setState({
+      selecteddrugs: drugsarr
+    });
+  }
+
+  onChangeSelectionThymidine(value) {
+    var data = [];
+    if (value !== '') {
+      var thymidinestate = value.split(',');
+      for (let i = 0; i < thymidinestate.length; i++) {
+        let docRef = db.collection("HSV2resistance").doc("HSV2resistance").collection("HSV2ThymidineKinase").doc(thymidinestate[i]);
+        docRef.get().then(function (doc) {
+          if (doc.exists) {
+            data.push(doc.data());
+          }
+        }).catch(function (error) {
+          console.log("Error getting document:", error);
+        });
+      }
+    }
+    this.setState({ selectedThymidine: data })
+  }
+
+  onChangeSelectionPolymerase(value) {
+    var data = [];
+    if (value !== '') {
+      var polystate = value.split(',');
+      for (let i = 0; i < polystate.length; i++) {
+        let docRef = db.collection("HSV2resistance").doc("HSV2resistance").collection("HSV2Polymerase").doc(polystate[i]);
+        docRef.get().then(function (doc) {
+          if (doc.exists) {
+            data.push(doc.data());
+          }
+        }).catch(function (error) {
+          console.log("Error getting document:", error);
+        });
+      }
+    }
+    this.setState({ selectedPolymerase: data })
+  }
+
+  componentDidMount() {
+    var HSV1ThymidineKinase = []
+    db
+      .collection('HSV2resistance')
+      .doc("HSV2resistance")
+      .collection("HSV2ThymidineKinase")
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            HSV1ThymidineKinase.push({ label: object, value: object })
+            this.setState({ poly: HSV1ThymidineKinase })
+          });
+      });
+
+    var HSV1Polymerase = []
+    db
+      .collection('HSV2resistance')
+      .doc("HSV2resistance")
+      .collection("HSV2Polymerase")
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            HSV1Polymerase.push({ label: object, value: object })
+            this.setState({ term: HSV1Polymerase })
+          });
+      });
+  }
+  handleSubmit() {
+    if (this.state.selectedPolymerase === [] &&
+      this.state.selectedThymidine === []) {
+      this.setState({ empty: true });
+    } else {
+      let drugarray = [];
+      for (let i = 0; i < this.state.drugs.length; i++) {
+        drugarray.push(this.state.drugs[i][0])
+      }
+      this.setState({ empty: false });
+      if (this.state.submitClicked === true) {
+        this.setState({
+          selecteddrugs: drugarray,
+          selectedPolymerase: [],
+          selectedThymidine: []
+        })
+      }
+      this.setState({ submitClicked: !this.state.submitClicked })
+    }
+  }
+
+
+  render() {
+    if (this.state.loaded) {
+      return (
+        <div className="container">
+          {
+            this.state.submitClicked ?
+              <div>
+                <HSVResults selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase} isClicked={this.state.submitClicked}></HSVResults>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+              </div>
+              :
+              <div>
+                <h3 className='pageheader'><strong>Genotypic Resistance Interpretation Algorithm HSV-2</strong></h3>
+                <p className='druglabel'>Drug Selection</p>
+                <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
+                <h3 className='druglabel'><strong>Mutation Selection</strong></h3>
+                <h3><strong>UL23 - Thymidine Kinase</strong></h3>
+                <MultiVarianceSelectField changeSelection={this.onChangeSelectionThymidine.bind(this)} input={this.state.poly}></MultiVarianceSelectField>
+                <h3><strong>UL30 - DNA Polymerase</strong></h3>
+                <MultiVarianceSelectField changeSelection={this.onChangeSelectionPolymerase.bind(this)} input={this.state.term}></MultiVarianceSelectField>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
+              </div>
+          }
+        </div >
+      )
+    } else {
+      return (
+        <div className="loaderContainer">
+          <div className="loader"></div>
+        </div>
+      );
+    }
+  }
+}
+
 class CMVdb extends Component {
 
   constructor() {
@@ -213,44 +748,15 @@ class CMVdb extends Component {
       phos: [],
       drugs: [],
       submitClicked: false,
-      empty: false,
-      selecteddrugs: []
+      empty: true,
+      selecteddrugs: [],
+      loaded: false
     }
   }
 
-  //NA found clinically but not phenotyped
-  //lobucavir (LBV) 
-  //adefovir (ADV)
-  //valganciclovir (valGCV)
-  // M393R flag
-  // M393K flag
-  // L501F
-  // Y(I)722V
-  // H729Y
-  // Y751H
-  // V787I
-
-  // R369G
-  // R369S
-
-  // Del591–594 3-10 range
-  // A594P
-  // G598S commented about clinical
-  // C603R	3.6–8.3
-  // M460L
-  // A590T possibly clinical
-  // del590 to 600 11158760 no fold ratio just ec50
-  // del590 to 603 - ratio not there - jcv
-  // A591D not in any of the papers
-  // C592F can't open the reference from 72
-  // L595T can't open 9207351
-  // N597I can't open 9697738
-  // del597 to 603 no data in the only reference https://academic.oup.com/view-large/figure/89851975/186-6-760-tab004.jpeg
-
-
-
   componentWillMount() {
-    var drugarray = []
+    var drugarray = [];
+    var drugobj = [];
     db
       .collection('drug')
       .get()
@@ -262,12 +768,17 @@ class CMVdb extends Component {
             var keys = Object.keys(object);
             var i;
             for (i = 0; i < keys.length; i++) {
-              drugarray.push({
+              drugarray.push(keys[i])
+              drugobj.push({
                 label: keys[i],
                 value: keys[i]
               })
             }
-            this.setState({ drugs: drugarray })
+            this.setState({ drugs: drugobj })
+            this.setState({ selecteddrugs: drugarray })
+            this.setState({
+              loaded: true
+            });
           });
       });
     var epistasis = []
@@ -330,7 +841,7 @@ class CMVdb extends Component {
   }
 
   onChangeSelectionDrug(value) {
-    let drugsarr = value.split(',')
+    let drugsarr = value.split(',');
     this.setState({
       selecteddrugs: drugsarr
     });
@@ -390,6 +901,7 @@ class CMVdb extends Component {
     }
     this.setState({ selected97phos: data })
   }
+
   handleSubmit() {
     if (this.state.selected54poly === [] &&
       this.state.selected56term === [] &&
@@ -397,10 +909,14 @@ class CMVdb extends Component {
       this.setState({ empty: true });
       console.log("YOOOO")
     } else {
+      let drugarray = [];
+      for (let i = 0; i < this.state.drugs.length; i++) {
+        drugarray.push(this.state.drugs[i][0])
+      }
       this.setState({ empty: false });
       if (this.state.submitClicked === true) {
         this.setState({
-          selecteddrugs: [],
+          selecteddrugs: drugarray,
           selected54poly: [],
           selected56term: [],
           selected97phos: []
@@ -411,40 +927,46 @@ class CMVdb extends Component {
   }
 
   render() {
-    return (
-
-      <div className="container" >
-        {
-          this.state.submitClicked ?
-            <div>
+    if (this.state.loaded) {
+      return (
+        <div className="container" >
+          {
+            this.state.submitClicked ?
               <div>
-                <h2 className="pageheader">Results:</h2>
-                <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                <div>
+                  <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                </div>
               </div>
-            </div>
-            :
-            <div>
-              <h3 className='pageheader'>Genotypic Resistance Interpretation Algorithm</h3>
-              <p className='druglabel'>Drug Selection</p>
-              <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
-              <h3 className='druglabel'>Mutation Selection</h3>
-              <h4>UL54 - DNA Polymerase</h4>
-              <MultiVarianceSelectField changeSelection={this.onChangeSelection54poly.bind(this)} input={this.state.poly}></MultiVarianceSelectField>
-              <h4>UL56 - Terminase</h4>
-              <MultiVarianceSelectField changeSelection={this.onChangeSelection56term.bind(this)} input={this.state.term}></MultiVarianceSelectField>
-              <h4>UL97 - Phosphotransferase</h4>
-              <MultiVarianceSelectField changeSelection={this.onChangeSelection97phos.bind(this)} input={this.state.phos}></MultiVarianceSelectField>
-              <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
-              {this.state.empty ?
-                <div><p>please enter a variant</p></div>
-                :
-                <div></div>
-              }
-            </div>
-        }
-      </div>
-    );
+              :
+              <div>
+                <h3 className='pageheader'><strong>Genotypic Resistance Interpretation Algorithm</strong></h3>
+                <p className='druglabel'>Drug Selection</p>
+                <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
+                <h3 className='druglabel'><strong>Mutation Selection</strong></h3>
+                <h3><strong>UL54 - DNA Polymerase</strong></h3>
+                <MultiVarianceSelectField changeSelection={this.onChangeSelection54poly.bind(this)} input={this.state.poly}></MultiVarianceSelectField>
+                <h3><strong>UL56 - Terminase</strong></h3>
+                <MultiVarianceSelectField changeSelection={this.onChangeSelection56term.bind(this)} input={this.state.term}></MultiVarianceSelectField>
+                <h3><strong>UL97 - Phosphotransferase</strong></h3>
+                <MultiVarianceSelectField changeSelection={this.onChangeSelection97phos.bind(this)} input={this.state.phos}></MultiVarianceSelectField>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
+                {this.state.empty ?
+                  <div><p>please enter a variant</p></div>
+                  :
+                  <div></div>
+                }
+              </div>
+          }
+        </div>
+      )
+    } else {
+      return (
+        <div className="loaderContainer">
+          <div className="loader"></div>
+        </div>
+      );
+    }
   }
 }
 
@@ -462,7 +984,9 @@ class Results extends Component {
       polyvarname: [],
       polyvarreference: [],
       termvarname: [],
-      termvarreference: []
+      termvarreference: [],
+      colheaders: ["Variant", "Reference", "Comments"],
+      headers: []
     };
   }
 
@@ -470,6 +994,16 @@ class Results extends Component {
     var selected54poly = this.state.selected54poly;
     var selected56term = this.state.selected56term;
     var selected97phos = this.state.selected97phos;
+    var headers = []
+    if (selected54poly.length !== 0) {
+      headers.push("UL54 Polymerase")
+    }
+    if (selected97phos.length !== 0) {
+      headers.push("UL97 Phosphotransferase")
+    }
+    if (selected56term.length !== 0) {
+      headers.push("UL56 Terminase")
+    }
     var variants = this.state.selected54poly.concat(this.state.selected56term);
     variants = variants.concat(this.state.selected97phos)
     for (let i = 0; i < this.state.epistasis.length; i++) {
@@ -493,7 +1027,6 @@ class Results extends Component {
           selected56term = selected56term.filter(function (variant) {
             return variant.Variant !== match[i];
           });
-          console.log(selected56term)
           selected97phos = selected97phos.filter(function (variant) {
             return variant.Variant !== match[i];
           });
@@ -509,12 +1042,11 @@ class Results extends Component {
     }
     this.setState({ selected54poly: selected54poly });
     this.setState({ allvars: variants });
-    console.log(variants)
     var drugs = this.state.selecteddrugs;
     var folddata = [];
     for (let i = 0; i < drugs.length; i++) {
       var drugobj = {};
-      let drug = drugs[i]
+      let drug = drugs[i];
       drugs[i] = drug + "fold";
       drugobj["drug"] = drug + "fold";
       drugobj["fold"] = 0;
@@ -528,12 +1060,39 @@ class Results extends Component {
       }
     }
     this.setState({ foldobj: folddata })
+    var columns54 = ["Variant"]
+    for (let i = 0; i < selected54poly.length; i++) {
+      let cur = selected54poly[i]
+      for (let j = 0; j < Object.keys(cur).length; j++) {
+        if (columns54.includes(Object.keys(cur)[j]) === false &&
+          Object.keys(cur)[j] !== "Comments" &&
+          Object.keys(cur)[j] !== "Reference") {
+          columns54.push(Object.keys(cur)[j])
+        }
+      }
+    }
+    for (let i = 0; i < columns54.length; i++) {
+      let newDrug = columns54[i];
+      newDrug = newDrug.replace("fold", "");
+      newDrug = newDrug.charAt(0).toUpperCase() + newDrug.substr(1);
+      columns54[i] = newDrug
+    }
+    columns54.push("Comments")
+    columns54.push("Reference")
+    // var data54 = {columns: data: selected54poly}
+    // {
+    //   label: 'Name',
+    //   field: 'name',
+    //   sort: 'asc',
+    //   width: 150
+    // }
   }
 
   render() {
     return (
       <div>
-        <h5>Drug Resistance Profile</h5>
+        <h1 className="pageheader">Results:</h1>
+        <h2 style={{ textDecoration: 'underline' }}>Drug Resistance Profile</h2>
         <p>Fold change by drug</p>
         <div className="drugProfile">
           <table className="table">
@@ -551,49 +1110,284 @@ class Results extends Component {
             </tbody>
           </table>
         </div>
-        {/* {this.props.selected54poly && */}
         <div>
-          <h4>UL54 Polymerase</h4>
-          <BootstrapTable data={this.state.selected54poly} exportCSV>
-            <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
-            <TableHeaderColumn width='150' dataField='ganciclovirfold'>Ganciclovir-GCV (fold ratio)</TableHeaderColumn>
-            <TableHeaderColumn width='150' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
-            <TableHeaderColumn width='150' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-            <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
-            <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn>
-            <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
-            <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
-          </BootstrapTable>
+          <h2 style={{ textDecoration: 'underline' }}>Individual Variant Resistance</h2>
+          {
+            this.state.selected54poly.length !== 0 ?
+              <div>
+                <h2>UL54 Polymerase</h2>
+                <BootstrapTable data={this.state.selected54poly} bordered={false} striped hover exportCSV
+                >
+                  <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='ganciclovirfold'>Ganciclovir-GCV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          {
+            this.state.selected56term.length !== 0 ?
+              <div>
+                <h2>UL56 Terminase</h2>
+                <BootstrapTable data={this.state.selected56term} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          {
+            this.state.selected97phos.length !== 0 ?
+              <div>
+                <h2>UL97 Phosphotransferase</h2>
+                <BootstrapTable data={this.state.selected97phos} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='170' dataField='Variant' isKey>Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='cidofovirfold'> Cidofovir (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          {
+            this.state.selectedepistasis.length !== 0 ?
+              <div>
+                <h2>Epistatic Variants</h2>
+                <BootstrapTable data={this.state.selectedepistasis} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Comments' dataFormat={activeFormatter}>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
         </div>
-        {/* } */}
-        <h4>UL56 Terminase</h4>
-        <BootstrapTable data={this.state.selected56term} exportCSV>
-          <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
-        </BootstrapTable>
-        <h4>UL97 Phosphotransferase</h4>
-        <BootstrapTable data={this.state.selected97phos} exportCSV>
-          <TableHeaderColumn width='170' dataField='Variant' isKey>Variant</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='cidofovirfold'> Cidofovir (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
-        </BootstrapTable>
-        <h4>Epistatic Variants</h4>
-        <BootstrapTable data={this.state.selectedepistasis} exportCSV>
-          <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
-          <TableHeaderColumn width='150' dataField='Comments' dataFormat={activeFormatter}>Comments</TableHeaderColumn>
-        </BootstrapTable>
       </div>
     )
   }
 }
+
+class HSVResults extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      selectedThymidine: this.props.selectedThymidine,
+      selectedPolymerase: this.props.selectedPolymerase,
+      selecteddrugs: this.props.selecteddrugs,
+      selectedepistasis: [],
+      epistasis: this.props.epistasis,
+      allvars: [],
+      polyvarname: [],
+      polyvarreference: [],
+      termvarname: [],
+      termvarreference: [],
+      colheaders: ["Variant", "Reference", "Comments"],
+      headers: []
+    };
+  }
+
+  componentWillMount() {
+    var selectedThymidine = this.state.selectedThymidine;
+    var selectedPolymerase = this.state.selectedPolymerase;
+    var variants = this.state.selectedThymidine.concat(this.state.selectedPolymerase);
+    for (let i = 0; i < this.state.epistasis.length; i++) {
+      let total = this.state.epistasis[i].Variant.length
+      let match = [];
+      for (let j = 0; j < this.state.epistasis[i].Variant.length; j++) {
+        for (let k = 0; k < variants.length; k++) {
+          if (variants[k].Variant === this.state.epistasis[i].Variant[j]) {
+            match.push(variants[k].Variant);
+          }
+        }
+      }
+      if (match.length === total) {
+        for (let i = 0; i < match.length; i++) {
+          variants = variants.filter(function (variant) {
+            return variant.Variant !== match[i];
+          });
+          selectedThymidine = selectedThymidine.filter(function (variant) {
+            return variant.Variant !== match[i];
+          });
+          selectedPolymerase = selectedPolymerase.filter(function (variant) {
+            return variant.Variant !== match[i];
+          });
+        }
+        variants.push(this.state.epistasis[i])
+        let curepi = this.state.selectedepistasis;
+        curepi.push(this.state.epistasis[i]);
+        this.setState({ selectedepistasis: curepi });
+        this.setState({ selectedPolymerase: selectedPolymerase })
+        this.setState({ selectedThymidine: selectedThymidine })
+      }
+    }
+    this.setState({ allvars: variants });
+    var drugs = this.state.selecteddrugs;
+    var folddata = [];
+    for (let i = 0; i < drugs.length; i++) {
+      var drugobj = {};
+      let drug = drugs[i];
+      drugs[i] = drug + "fold";
+      drugobj["drug"] = drug + "fold";
+      drugobj["fold"] = 0;
+      folddata.push(drugobj)
+    }
+    for (let i = 0; i < variants.length; i++) {
+      for (let j = 0; j < folddata.length; j++) {
+        if (folddata[j].drug in variants[i]) {
+          if (typeof variants[i][folddata[j].drug] === 'number') {
+            folddata[j].fold = folddata[j].fold + Number(variants[i][folddata[j].drug]);
+          }
+        }
+      }
+    }
+    this.setState({ foldobj: folddata })
+  }
+
+  commentFormatter(enumObject) {
+    let comment = enumObject
+    if (comment !== undefined && comment.includes("/n")) {
+      let lines = comment.split("/n")
+      let linesobj = []
+      for (let i = 0; i < lines.length; i++) {
+        let object = { value: lines[i], key: i }
+        linesobj.push(object)
+      }
+      return linesobj.map(item => {
+        return (
+          `<li key=${item.key}>${item.value}</li>`
+        );
+      });
+    } else {
+      return enumObject
+    }
+  }
+
+  render() {
+    return (
+      <div>
+        <h1 className="pageheader">Results:</h1>
+        <h2>Drug Resistance Profile</h2>
+        <p>Fold change by drug</p>
+        <div className="drugProfile">
+          <table className="table">
+            <thead>
+              <tr>
+                <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
+                <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                this.state.foldobj.map((drug) =>
+                  <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
+              }
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h2>Individual Variant Resistance</h2>
+          {
+            this.state.selectedThymidine.length !== 0 ?
+              <div>
+                <h3>UL23 Thymidine Kinase</h3>
+                <BootstrapTable data={this.state.selectedThymidine} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
+                  <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          {
+            this.state.selectedPolymerase.length !== 0 ?
+              <div>
+                <h3>UL30 Polymerase</h3>
+                <BootstrapTable data={this.state.selectedPolymerase} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                  <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          {
+            this.state.selectedepistasis.length !== 0 ?
+              <div>
+                <h3>Epistatic Variants</h3>
+                <BootstrapTable data={this.state.selectedepistasis} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                  <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+        </div>
+      </div>
+    )
+  }
+}
+
+// class commentFormatter extends React.Component {
+//   constructor(props) {
+//     super(props)
+//     this.state = {
+//       lines: []
+//     }
+//   }
+//   componentWillMount() {
+//     let comment = this.props.enumObject
+//     let lines = comment.split("/n")
+//     let linesobj = []
+//     for (let i = 0; i < lines.length; i++) {
+//       let object = { value: lines[i], key: i }
+//       linesobj.push(object)
+//     }
+//     this.setState({ lines: linesobj })
+//   }
+//   render() {
+//     return this.state.lines.map(item => {
+//       return (
+//         <li key={item.key}>
+//           {item.value}
+//         </li>
+//       );
+//     });
+//   }
+// }
 
 class ActiveFormatter extends React.Component {
   constructor(props) {
@@ -606,17 +1400,22 @@ class ActiveFormatter extends React.Component {
   }
   componentWillMount() {
     let url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=" + this.props.enumObject[0] + "&retmode=json&tool=my_tool&email=my_email@example.com";
-    fetch(url)
-      .then((responseText) => responseText.json())
-      .then((response) => {
-        let results = response.result[this.props.enumObject[0]]
-        let authors = results.authors
-        let pubdate = results.pubdate
-        let source = results.source
-        this.setState({ authors: authors })
-        this.setState({ year: pubdate })
-        this.setState({ publication: source })
-      })
+    if (this.props.enumObject[0] !== undefined) {
+      fetch(url)
+        .then((responseText) => responseText.json())
+        .then((response) => {
+          let results = response.result[this.props.enumObject[0]]
+          let authors = results.authors
+          let pubdate = results.pubdate
+          let source = results.source
+          this.setState({ authors: authors })
+          this.setState({ year: pubdate })
+          this.setState({ publication: source })
+        })
+        .catch(function () {
+          console.log("Error getting citation");
+        });
+    }
   }
 
   render() {
@@ -639,17 +1438,18 @@ class FormattedCitation extends React.Component {
   }
 
   render() {
-    console.log(this.props.authors)
-    let authors = this.props.authors.slice(0, 3)
-    var lastnames = '';
-    if (authors.length !== 0) {
-      lastnames = authors[0].name.substr(0, authors[0].name.indexOf(" "));
-      for (let i = 1; i < authors.length; i++) {
-        lastnames += ", " + authors[i].name.substr(0, authors[i].name.indexOf(" "));
+    if (this.props.authors !== undefined) {
+      let authors = this.props.authors.slice(0, 3)
+      var lastnames = '';
+      if (authors.length !== 0) {
+        lastnames = authors[0].name.substr(0, authors[0].name.indexOf(" "));
+        for (let i = 1; i < authors.length; i++) {
+          lastnames += ", " + authors[i].name.substr(0, authors[i].name.indexOf(" "));
+        }
       }
-    }
-    if (this.props.authors.length > 3) {
-      lastnames += ", et al."
+      if (this.props.authors.length > 3) {
+        lastnames += ", et al."
+      }
     }
     return (
       <a href={this.props.link} > {lastnames}, {this.props.publication}, {this.props.year}</a>
@@ -659,9 +1459,7 @@ class FormattedCitation extends React.Component {
 
 function activeFormatter(cell, row, enumObject, index) {
 
-  console.log(`The row index: ${index}`);
   //  console.log(enumObject)
-  console.log(cell)
   // for (let i = 0; i < cell.length; i++) {
   //   cell[i] = "https://www.ncbi.nlm.nih.gov/pubmed/" + cell[i];
   // }
@@ -682,12 +1480,12 @@ class FoldCard extends React.Component {
   }
   render() {
     var fold = this.props.fold.toFixed(2)
-    if (fold == 0) {
+    if (fold === 0) {
       fold = "No data"
     }
     return (
       < tr >
-        <th align="center" valign="top" rowSpan="1" colSpan="1">{this.state.drug.replace("fold", "")}</th>
+        <th className="drugHeader" align="center" valign="top" rowSpan="1" colSpan="1">{this.state.drug.replace("fold", "")}</th>
         <td align="left" valign="top" rowSpan="1" colSpan="1">{fold}</td>
       </tr >
     )
@@ -846,17 +1644,6 @@ class AddVariants extends Component {
   }
 }
 
-class FoldInput extends Component {
-  constructor(props) {
-    super(props);
-  }
-  render() {
-    return (
-      <p>{this.props.drug}</p>
-    )
-  }
-}
-
 class Login extends Component {
   constructor(props) {
     super(props);
@@ -1005,7 +1792,7 @@ var MultiDrugSelectField = createClass({
       removeSelected: true,
       disabled: false,
       stayOpen: false,
-      value: [],
+      value: this.props.input,
       rtl: false,
     };
   },
