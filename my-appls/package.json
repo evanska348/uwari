@@ -2,7 +2,7 @@
   "name": "my-appls",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://students.washington.edu/evanzhao/cmv/cmvwebsite/",
+  "homepage": "https://students.washington.edu/evanzhao/uw/uwari/",
   "dependencies": {
     "bootstrap": "^4.1.1",
     "create-react-class": "^15.6.3",
