@@ -108,7 +108,7 @@ class App extends Component {
             {/* <h1 className="display-4">Cytomegalovirus Drug Resistance Database</h1> */}
             <Navbar color="teal" dark expand="md" scrolling>
               <NavbarBrand href="/WelcomePage">
-                <strong>Cytomegalovirus Drug Resistance Database</strong>
+                <strong>UW Antiviral Resistance Interpretation</strong>
               </NavbarBrand>
               {!this.state.isWideEnough && <NavbarToggler onClick={this.onClick} />}
               <Collapse navbar>
