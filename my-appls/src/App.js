@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 import Select from 'react-select';
 import createClass from 'create-react-class';
 import firebase from 'firebase';
+import { withRouter } from "react-router";
 import 'firebase/auth';
 import { NavbarToggler, Collapse, Navbar, NavbarBrand, NavItem, NavbarNav, Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'mdbreact'
 import { Col, Container, Row, Footer } from 'mdbreact';
@@ -82,6 +83,20 @@ class App extends Component {
       })
   }
 
+  componentDidUpdate(prevProps) {
+    if (this.props.location !== prevProps.location) {
+      this.onRouteChanged();
+    }
+  }
+
+  onRouteChanged() {
+    console.log("ROUTE CHANGED");
+  }
+
+  // static propTypes = {
+  //   location: React.PropTypes.object.isRequired
+  // }
+
   handleUser(data) {
     this.setState({
       user: data
@@ -114,7 +129,7 @@ class App extends Component {
               <Collapse navbar>
                 <NavbarNav left>
                   <NavItem>
-                    <NavLink className="nav-link waves-effect waves-light" aria-haspopup="true" aria-expanded="false" to="/WelcomePage">Home</NavLink>
+                    <NavLink exact className="nav-link waves-effect waves-light" aria-haspopup="true" aria-expanded="false" to="/WelcomePage">Home</NavLink>
                   </NavItem>
                   <NavItem>
                     <NavLink className="nav-link waves-effect waves-light" to="/CMVdb">CMVdb</NavLink>
@@ -167,6 +182,7 @@ class App extends Component {
                 </NavbarNav>
               </Collapse>
             </Navbar>
+            <Route exact path="/" component={WelcomePage} />
             <Route path="/WelcomePage" component={WelcomePage} />
             <Route path="/CMVdb" component={CMVdb} />
             <Route path="/HSV1db" component={HSV1db} />
@@ -969,6 +985,7 @@ class CMVdb extends Component {
     }
   }
 }
+//316 - 415
 
 class Results extends Component {
   constructor(props) {
@@ -1266,12 +1283,14 @@ class HSVResults extends Component {
       for (let i = 0; i < lines.length; i++) {
         let object = { value: lines[i], key: i }
         linesobj.push(object)
+        console.log(linesobj)
+        console.log(typeof linesobj)
       }
       return linesobj.map(item => {
         return (
           `<li key=${item.key}>${item.value}</li>`
         );
-      });
+      }).join('');
     } else {
       return enumObject
     }
@@ -1909,5 +1928,5 @@ var GeneSelectField = createClass({
   }
 });
 
-export default App;
+export default withRouter(App);
 
