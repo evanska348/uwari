@@ -182,7 +182,7 @@ class App extends Component {
                 </NavbarNav>
               </Collapse>
             </Navbar>
-            <Route exact path="" component={WelcomePage} />
+            <Route exact path="/evanzhao/uw/uwari/" component={WelcomePage} />
             <Route path="/WelcomePage" component={WelcomePage} />
             <Route path="/CMVdb" component={CMVdb} />
             <Route path="/HSV1db" component={HSV1db} />
