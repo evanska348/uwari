@@ -144,7 +144,7 @@ class App extends Component {
                     <Dropdown>
                       <DropdownToggle nav caret>File Input</DropdownToggle>
                       <DropdownMenu>
-                        <DropdownItem href="/CMVFileInput">CMV</DropdownItem>
+                        <NavLink className="nav-link waves-effect waves-light" to="/CMVFileInput">CMV</NavLink>
                         <DropdownItem href="/HSV1FileInput">HSV-1</DropdownItem>
                         <DropdownItem href="/HSV2FileInput">HSV-2</DropdownItem>
                       </DropdownMenu>
