@@ -9,7 +9,7 @@ import firebase from 'firebase';
 import { withRouter } from "react-router";
 import 'firebase/auth';
 import { NavbarToggler, Collapse, Navbar, NavbarBrand, NavItem, NavbarNav, Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'mdbreact'
-import { Col, Container, Row, Footer } from 'mdbreact';
+import { Col, Container, Row, Footer, Input } from 'mdbreact';
 import 'firebase/firestore';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table'
 import ScrollableAnchor from 'react-scrollable-anchor'
@@ -144,7 +144,7 @@ class App extends Component {
                     <Dropdown>
                       <DropdownToggle nav caret>File Input</DropdownToggle>
                       <DropdownMenu>
-                        <DropdownItem href="/CSVFileInput">CMV</DropdownItem>
+                        <DropdownItem href="/CMVFileInput">CMV</DropdownItem>
                         <DropdownItem href="/HSV1FileInput">HSV-1</DropdownItem>
                         <DropdownItem href="/HSV2FileInput">HSV-2</DropdownItem>
                       </DropdownMenu>
@@ -188,7 +188,7 @@ class App extends Component {
             <Route path="/HSV1db" component={HSV1db} />
             <Route path="/HSV2db" component={HSV2db} />
             <Route path="/AddVariants" component={AddVariants} />
-            <Route path="/CSVFileInput" component={CSVFileInput} />
+            <Route path="/CMVFileInput" component={CMVFileInput} />
             <Route path="/HSV1FileInput" component={HSV1FileInput} />
             <Route path="/HSV2FileInput" component={HSV2FileInput} />
             <Route path="/Results" component={Results} />
@@ -303,6 +303,8 @@ class HSV1FileInput extends Component {
     this.setState({ submitClicked: !this.state.submitClicked })
   }
 
+
+
   render() {
     return (
       <div className="container">
@@ -327,43 +329,282 @@ class HSV1FileInput extends Component {
   }
 }
 
-class CSVFileInput extends Component {
+class CMVFileInput extends Component {
 
   constructor() {
     super();
+    this.updateInput54 = this.updateInput54.bind(this);
+    this.updateInput56 = this.updateInput56.bind(this);
+    this.updateInput97 = this.updateInput97.bind(this);
     this.state = {
       submitClicked: false,
+      input: '',
+      poly: [],
+      term: [],
+      phos: [],
+      selecteddrugs: [],
+      drugs: [],
+      selected54poly: [],
+      selected56term: [],
+      selected97phos: [],
+      loaded: false
     }
   }
 
-  handleSubmit() {
-    this.setState({ submitClicked: !this.state.submitClicked })
+  componentDidMount() {
+    var drugarray = [];
+    var drugobj = [];
+    db
+      .collection('drug')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = JSON.parse(doc._document.data)
+            var keys = Object.keys(object);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+              drugarray.push(keys[i])
+              drugobj.push({
+                label: keys[i],
+                value: keys[i]
+              })
+            }
+            this.setState({ drugs: drugobj })
+            this.setState({ selecteddrugs: drugarray })
+            this.setState({
+              loaded: true
+            });
+          });
+      });
+    var ul54polymerasevariants = []
+    db
+      .collection('ul54polymerasevariance')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            ul54polymerasevariants.push({ label: object, value: object })
+            this.setState({ poly: ul54polymerasevariants })
+          });
+      });
+
+    var UL56terminase = []
+    db
+      .collection('ul56terminasevariants')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            UL56terminase.push({ label: object, value: object })
+            this.setState({ term: UL56terminase })
+          });
+      });
+
+    var UL97phosphotransferase = []
+    db
+      .collection('ul97phosphotransferasevariants')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            UL97phosphotransferase.push({ label: object, value: object })
+            this.setState({ phos: UL97phosphotransferase })
+          });
+      });
   }
+
+  handleSubmit() {
+    if (this.state.selected54poly === [] &&
+      this.state.selected56term === [] &&
+      this.state.selected96phos === []) {
+      this.setState({ empty: true });
+      console.log("YOOOO")
+    } else {
+      let drugarray = [];
+      for (let i = 0; i < this.state.drugs.length; i++) {
+        drugarray.push(this.state.drugs[i].label)
+      }
+      this.setState({ empty: false });
+      if (this.state.submitClicked === true) {
+        this.setState({
+          selecteddrugs: drugarray,
+          selected54poly: [],
+          selected56term: [],
+          selected97phos: []
+        })
+      }
+      this.setState({ submitClicked: !this.state.submitClicked })
+    }
+  }
+
+  updateInput54(event) {
+    this.setState({ input: event.target.value })
+    let polystate = [];
+    let fasta_sequence = event.target.value;
+    for (let i = 0; i < this.state.poly.length; i++) {
+      let variant = this.state.poly[i].value;
+      if (variant.match(/\d+/g) !== null) {
+        let loc = variant.match(/\d+/g).map(Number)[0];
+        if (fasta_sequence.charAt(loc - 1) === variant[variant.length - 1]) {
+          polystate.push(variant)
+        }
+      }
+    }
+    if (fasta_sequence.charAt(0) !== 'M') {
+      console.log('Protein sequence most likely sucks')
+    }
+    let data = [];
+    for (let i = 0; i < polystate.length; i++) {
+      let docRef = db.collection("ul54polymerasevariance").doc(polystate[i]);
+      docRef.get().then(function (doc) {
+        if (doc.exists) {
+          data.push(doc.data());
+        }
+      }).catch(function (error) {
+        console.log("Error getting document:", error);
+      });
+    }
+    console.log(data)
+    this.setState({ selected54poly: data })
+  }
+
+  onChangeSelectionDrug(value) {
+    let drugsarr = value.split(',');
+    this.setState({
+      selecteddrugs: drugsarr
+    });
+  }
+
+  updateInput97(event) {
+    this.setState({ input: event.target.value })
+    let phosstate = [];
+    let fasta_sequence = event.target.value;
+    for (let i = 0; i < this.state.phos.length; i++) {
+      let variant = this.state.phos[i].value;
+      if (variant.match(/\d+/g) !== null) {
+        let loc = variant.match(/\d+/g).map(Number)[0];
+        if (fasta_sequence.charAt(loc - 1) === variant[variant.length - 1]) {
+          phosstate.push(variant)
+        }
+      }
+    }
+    if (fasta_sequence.charAt(0) !== 'M') {
+      console.log('Protein sequence most likely sucks')
+    }
+    let data = [];
+    for (let i = 0; i < phosstate.length; i++) {
+      let docRef = db.collection("ul97phosphotransferasevariants").doc(phosstate[i]);
+      docRef.get().then(function (doc) {
+        if (doc.exists) {
+          data.push(doc.data());
+        }
+      }).catch(function (error) {
+        console.log("Error getting document:", error);
+      });
+    }
+    this.setState({ selected97phos: data })
+  }
+
+  onChangeSelectionDrug(value) {
+    let drugsarr = value.split(',');
+    this.setState({
+      selecteddrugs: drugsarr
+    });
+  }
+
+  updateInput56(event) {
+    this.setState({ input: event.target.value })
+    let termstate = [];
+    let fasta_sequence = event.target.value;
+    for (let i = 0; i < this.state.term.length; i++) {
+      let variant = this.state.term[i].value;
+      if (variant.match(/\d+/g) !== null) {
+        let loc = variant.match(/\d+/g).map(Number)[0];
+        if (fasta_sequence.charAt(loc - 1) === variant[variant.length - 1]) {
+          termstate.push(variant)
+        }
+      }
+    }
+    if (fasta_sequence.charAt(0) !== 'M') {
+      console.log('Protein sequence most likely sucks')
+    }
+    let data = [];
+    for (let i = 0; i < termstate.length; i++) {
+      let docRef = db.collection("ul56terminasevariants").doc(termstate[i]);
+      docRef.get().then(function (doc) {
+        if (doc.exists) {
+          data.push(doc.data());
+        }
+      }).catch(function (error) {
+        console.log("Error getting document:", error);
+      });
+    }
+    this.setState({ selected56term: data })
+  }
+
+  onChangeSelectionDrug(value) {
+    let drugsarr = value.split(',');
+    this.setState({
+      selecteddrugs: drugsarr
+    });
+  }
+
+
 
   render() {
-    return (
-      <div className="container">
-        {
-          this.state.submitClicked ?
-            <div>
+    if (this.state.loaded) {
+      return (
+        <div className="container">
+          {
+            this.state.submitClicked ?
               <div>
-                <h2 className="pageheader">Results:</h2>
-                <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                <div>
+                  <h2 className="pageheader">Results:</h2>
+                  <p>{this.state.mutation_list}</p>
+                  <Results selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                </div>
               </div>
-            </div>
-            :
-            <div>
-              <h2 className="pageheader"> CMV File Input</h2>
-              <input type="file"></input>
-              <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze</button>
-            </div>
-        }
-      </div>
-    )
+              :
+              <div>
+                <h2 className="pageheader"> CMV File Input</h2>
+                {/* <input type="file"></input> */}
+                <p className='druglabel'>Drug Selection</p>
+                <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
+                <h3 className='FileInput-headers'><strong>UL54 - DNA Polymerase</strong></h3>
+                <input type="file"></input>
+                <textarea className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL54 FASTA Text Input" onChange={this.updateInput54}></textarea>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL54</button>
+                <h3 className='FileInput-headers'><strong>UL56 - Terminase</strong></h3>
+                <input type="file"></input>
+                <textarea className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL56</button>
+                <h3 className='FileInput-headers'><strong>UL97 - Phosphotransferase</strong></h3>
+                <input type="file"></input>
+                <textarea className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL97</button>
+              </div>
+          }
+        </div>
+      )
+    } else {
+      return (
+        <div className="loaderContainer">
+          <div className="loader"></div>
+        </div>
+      );
+    }
   }
 }
-
+// MEMNLLQKLCVVCSKCNEYAMELECLKYCDPNVLLAESTPFKRNAAAIVYLYRKIYPEVVAQNRTQSSLLTLYLEMLLKALHEDTALLDRALMAYSRQPDRAAFYRTVLRLDRCDRHHTVELQFTDNVRFSVSLATLNDIERFLCKMNYVYGILAPEAGLEVCAQLLELLRRLCGISPVARQEVYVEGTTCAQCYEELTIIPNQGRSLNKRLQGLLCNHIAVHRPSSQSDVNIQTVEQDLLDLTTRIPHLAGVLSALKSLFSSSSAYHSYIQEAEEALREYNLFTDIPERIYSLSDFTYWSRTSEVIVKRVGITIQQLNVYHQLCRALMNGISRHLYGEDVEDIFVLGEKALDGEERMFVGSVFAAPNRIIDLITSLSIQAFEDNPVFNKLHESNEMYTKIKHILEEIRRPLPDGTGGDGPEGEVIHLRGREAMSGTGTTLMTASNSSNSSTHSQRNNGGGGRARGGGKKAVGGGANGQDGDGSENGLRVRNCDEHEALDLVDARSRIHNVTREVNVRKRAYLQKVSEVGYGKVIRCIKTQERLTSKLIDVNLVGPLCLDFISKLMNGFLYRSQYHQDQDVVDVGNQFTYDEHLYVVNNLIHKSLPVESLPLLGQQIYELCNGPLFTHCTDRYPLSHNVDMAYACDNAGVLPHVKDDLVKCAEGTVYPSEWMVVKYMGFFNFSDCQDLNVLQKEMWMHVRELVLSVALYNETFGKQLSIACLRDELHPDRDVILTYNKEWPLLLRHEGSLYKSKDLYLLLYRHLSRPDESGDVPTAPVAKPSTLTAAAAVSGAFREPDRPWLPSPYPSSSTAGVSRRVRATRKRPRRASSLLDLARDEHGIQDLVPGSLR
 class HSV1db extends Component {
 
   constructor() {
@@ -501,24 +742,25 @@ class HSV1db extends Component {
   }
 
   handleSubmit() {
-    if (this.state.selectedPolymerase === [] &&
-      this.state.selectedThymidine === []) {
-      this.setState({ empty: true });
-    } else {
-      let drugarray = [];
-      for (let i = 0; i < this.state.drugs.length; i++) {
-        drugarray.push(this.state.drugs[i][0])
-      }
-      this.setState({ empty: false });
-      if (this.state.submitClicked === true) {
-        this.setState({
-          selecteddrugs: drugarray,
-          selectedPolymerase: [],
-          selectedThymidine: []
-        })
-      }
-      this.setState({ submitClicked: !this.state.submitClicked })
+    // if (this.state.selectedPolymerase === [] &&
+    //   this.state.selectedThymidine === []) {
+    //   this.setState({ empty: true });
+    // } else {
+    // this.setState({ empty: false });
+    let drugarray = [];
+    for (let i = 0; i < this.state.drugs.length; i++) {
+      drugarray.push(this.state.drugs[i].label)
     }
+    console.log(drugarray)
+    if (this.state.submitClicked === true) {
+      this.setState({
+        selecteddrugs: drugarray,
+        selectedPolymerase: [],
+        selectedThymidine: []
+      })
+    }
+    this.setState({ submitClicked: !this.state.submitClicked })
+    // }
   }
 
   render() {
@@ -529,7 +771,7 @@ class HSV1db extends Component {
           {
             this.state.submitClicked ?
               <div>
-                <HSVResults selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase} isClicked={this.state.submitClicked}></HSVResults>
+                <HSVResults selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
               </div>
               :
@@ -694,24 +936,19 @@ class HSV2db extends Component {
       });
   }
   handleSubmit() {
-    if (this.state.selectedPolymerase === [] &&
-      this.state.selectedThymidine === []) {
-      this.setState({ empty: true });
-    } else {
-      let drugarray = [];
-      for (let i = 0; i < this.state.drugs.length; i++) {
-        drugarray.push(this.state.drugs[i][0])
-      }
-      this.setState({ empty: false });
-      if (this.state.submitClicked === true) {
-        this.setState({
-          selecteddrugs: drugarray,
-          selectedPolymerase: [],
-          selectedThymidine: []
-        })
-      }
-      this.setState({ submitClicked: !this.state.submitClicked })
+    let drugarray = [];
+    for (let i = 0; i < this.state.drugs.length; i++) {
+      drugarray.push(this.state.drugs[i].label)
     }
+    this.setState({ empty: false });
+    if (this.state.submitClicked === true) {
+      this.setState({
+        selecteddrugs: drugarray,
+        selectedPolymerase: [],
+        selectedThymidine: []
+      })
+    }
+    this.setState({ submitClicked: !this.state.submitClicked })
   }
 
 
@@ -927,7 +1164,7 @@ class CMVdb extends Component {
     } else {
       let drugarray = [];
       for (let i = 0; i < this.state.drugs.length; i++) {
-        drugarray.push(this.state.drugs[i][0])
+        drugarray.push(this.state.drugs[i].label)
       }
       this.setState({ empty: false });
       if (this.state.submitClicked === true) {
@@ -1003,6 +1240,7 @@ class Results extends Component {
       termvarname: [],
       termvarreference: [],
       colheaders: ["Variant", "Reference", "Comments"],
+      foldobj: [],
       headers: []
     };
   }
@@ -1012,13 +1250,13 @@ class Results extends Component {
     var selected56term = this.state.selected56term;
     var selected97phos = this.state.selected97phos;
     var headers = []
-    if (selected54poly.length !== 0) {
+    if (selected54poly !== undefined && selected54poly.length !== 0) {
       headers.push("UL54 Polymerase")
     }
-    if (selected97phos.length !== 0) {
+    if (selected97phos !== undefined && selected97phos.length !== 0) {
       headers.push("UL97 Phosphotransferase")
     }
-    if (selected56term.length !== 0) {
+    if (selected56term !== undefined && selected56term.length !== 0) {
       headers.push("UL56 Terminase")
     }
     var variants = this.state.selected54poly.concat(this.state.selected56term);
@@ -1106,26 +1344,37 @@ class Results extends Component {
   }
 
   render() {
+    var folddata = this.state.foldobj;
+    var foldtotal = 0;
+    for (let i = 0; i < folddata.length; i++) {
+      foldtotal += folddata[i].fold
+    }
     return (
       <div>
         <h1 className="pageheader">Results:</h1>
         <h2 style={{ textDecoration: 'underline' }}>Drug Resistance Profile</h2>
         <p>Fold change by drug</p>
         <div className="drugProfile">
-          <table className="table">
-            <thead>
-              <tr>
-                <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
-                <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
-              </tr>
-            </thead>
-            <tbody>
-              {
-                this.state.foldobj.map((drug) =>
-                  <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
-              }
-            </tbody>
-          </table>
+          {foldtotal === 0 ?
+            <p style={{ "color": "red" }}>
+              No fold data available for the selected drugs
+            </p>
+            :
+            <table className="table">
+              <thead>
+                <tr>
+                  <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
+                  <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  folddata.map((drug) =>
+                    <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
+                }
+              </tbody>
+            </table>
+          }
         </div>
         <div>
           <h2 style={{ textDecoration: 'underline' }}>Individual Variant Resistance</h2>
@@ -1139,8 +1388,8 @@ class Results extends Component {
                   <TableHeaderColumn width='150' dataField='ganciclovirfold'>Ganciclovir-GCV (fold ratio)</TableHeaderColumn>
                   <TableHeaderColumn width='150' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
                   <TableHeaderColumn width='150' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn>
+                  {/* <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn> */}
                   <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
                   <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
                 </BootstrapTable>
@@ -1155,8 +1404,8 @@ class Results extends Component {
                 <BootstrapTable data={this.state.selected56term} bordered={false} striped hover exportCSV>
                   <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
                   <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn>
+                  {/* <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn> */}
                   <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
                   <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
                 </BootstrapTable>
@@ -1214,6 +1463,7 @@ class HSVResults extends Component {
       termvarname: [],
       termvarreference: [],
       colheaders: ["Variant", "Reference", "Comments"],
+      foldobj: [],
       headers: []
     };
   }
@@ -1253,7 +1503,30 @@ class HSVResults extends Component {
       }
     }
     this.setState({ allvars: variants });
-    var drugs = this.state.selecteddrugs;
+  }
+
+  commentFormatter(enumObject) {
+    let comment = enumObject
+    if (comment !== undefined && comment.includes("/n")) {
+      let lines = comment.split("/n")
+      let linesobj = []
+      for (let i = 0; i < lines.length; i++) {
+        let object = { value: lines[i], key: i }
+        linesobj.push(object)
+      }
+      return linesobj.map(item => {
+        return (
+          `<li key=${item.key}>${item.value}</li>`
+        );
+      }).join('');
+    } else {
+      return enumObject
+    }
+  }
+
+  render() {
+    var variants = this.props.selectedThymidine.concat(this.props.selectedPolymerase);
+    var drugs = this.props.selecteddrugs;
     var folddata = [];
     for (let i = 0; i < drugs.length; i++) {
       var drugobj = {};
@@ -1272,52 +1545,38 @@ class HSVResults extends Component {
         }
       }
     }
-    this.setState({ foldobj: folddata })
-  }
-
-  commentFormatter(enumObject) {
-    let comment = enumObject
-    if (comment !== undefined && comment.includes("/n")) {
-      let lines = comment.split("/n")
-      let linesobj = []
-      for (let i = 0; i < lines.length; i++) {
-        let object = { value: lines[i], key: i }
-        linesobj.push(object)
-        console.log(linesobj)
-        console.log(typeof linesobj)
-      }
-      return linesobj.map(item => {
-        return (
-          `<li key=${item.key}>${item.value}</li>`
-        );
-      }).join('');
-    } else {
-      return enumObject
+    var foldtotal = 0;
+    for (let i = 0; i < folddata.length; i++) {
+      foldtotal += folddata[i].fold
     }
-  }
-
-  render() {
     return (
       <div>
         <h1 className="pageheader">Results:</h1>
         <h2>Drug Resistance Profile</h2>
         <p>Fold change by drug</p>
         <div className="drugProfile">
-          <table className="table">
-            <thead>
-              <tr>
-                <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
-                <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
-              </tr>
-            </thead>
-            <tbody>
-              {
-                this.state.foldobj.map((drug) =>
-                  <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
-              }
-            </tbody>
-          </table>
+          {foldtotal === 0 ?
+            <p style={{ "color": "red" }}>
+              No fold data available for the selected drugs
+            </p>
+            :
+            <table className="table">
+              <thead>
+                <tr>
+                  <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
+                  <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  folddata.map((drug) =>
+                    <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
+                }
+              </tbody>
+            </table>
+          }
         </div>
+        <hr />
         <div>
           <h2>Individual Variant Resistance</h2>
           {
@@ -1499,15 +1758,16 @@ class FoldCard extends React.Component {
   }
   render() {
     var fold = this.props.fold.toFixed(2)
-    if (fold === 0) {
-      fold = "No data"
+    if (fold == 0) {
+      return (null);
+    } else {
+      return (
+        < tr >
+          <th className="drugHeader" align="center" valign="top" rowSpan="1" colSpan="1">{this.state.drug.replace("fold", "")}</th>
+          <td align="left" valign="top" rowSpan="1" colSpan="1">{fold}</td>
+        </tr >
+      )
     }
-    return (
-      < tr >
-        <th className="drugHeader" align="center" valign="top" rowSpan="1" colSpan="1">{this.state.drug.replace("fold", "")}</th>
-        <td align="left" valign="top" rowSpan="1" colSpan="1">{fold}</td>
-      </tr >
-    )
   }
 }
 
@@ -1516,6 +1776,7 @@ class AddVariants extends Component {
     super(props);
     this.state = {
       user: this.props.user,
+      virus: '',
       gene: '',
       variant: '',
       fold: '',
@@ -1527,6 +1788,13 @@ class AddVariants extends Component {
       drugs: []
     };
   }
+
+  onChangeSelectionVirus(value) {
+    this.setState({
+      Virus: value
+    });
+  }
+
 
   onChangeSelectionGene(value) {
     this.setState({
@@ -1601,50 +1869,40 @@ class AddVariants extends Component {
       <div className="container">
         <h3 className='pageheader'>Add Variants to the Database</h3>
         <form>
-
-          <p>Gene:</p>
+          <VirusSelectField changeSelection={this.onChangeSelectionVirus.bind(this)}></VirusSelectField>
           <GeneSelectField changeSelection={this.onChangeSelectionGene.bind(this)}></GeneSelectField>
-          <hr />
           <label>
-            Variant:
-            <input type="variant" className="form-control"
+            <Input label="Enter your variant" type="variant" className="form-control"
               name="variant"
               value={this.state.variant}
               onChange={(event) => { this.handleChange(event) }}
             />
           </label>
-          <hr />
           <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
           {this.state.selecteddrugs.map(element => {
             return <div key={element}>
-              <hr />
-              <p>{element} fold:</p>
-              <input type={element} className="form-control"
-                name={element}
-                value={this.state.element}
-                onChange={(event) => { this.handleChange(event) }}
-              />
+              <label>
+                <Input label={"Enter " + element.charAt(0).toUpperCase() + element.slice(1) + " Fold"}
+                  type='variant' className="form-control"
+                  name={element}
+                  value={this.state.element}
+                  onChange={(event) => { this.handleChange(event) }}
+                />
+              </label>
             </div>
           })}
-          <hr />
           <label>
-            Reference (PMID):
-            <input type="reference" className="form-control"
+            <Input label="Enter PMID reference" type="reference" className="form-control"
               name="reference"
               value={this.state.reference}
               onChange={(event) => { this.handleChange(event) }}
             />
           </label>
-          <hr />
-          <label>
-            Comments:
-          <input type="comments" className="form-control"
-              name="comments"
-              value={this.state.comments}
-              onChange={(event) => { this.handleChange(event) }}
-            />
-          </label>
-          <hr />
+          <Input label="Enter any additional comments" type="comments" className="form-control"
+            name="comments"
+            value={this.state.comments}
+            onChange={(event) => { this.handleChange(event) }}
+          />
           <div className="form-group">
             <button type='button' className="btn btn-primary mr-2" onClick={() => this.handleVariant()}>
               Submit Variant
@@ -1653,7 +1911,6 @@ class AddVariants extends Component {
           {this.state.failure &&
             <p className="alert alert-danger">{this.state.errorMessage}</p>
           }
-
           {this.state.success &&
             <div className="alert alert-success" id='loggedin'><h5>Logged in as {this.state.user.email}</h5></div>
           }
@@ -1892,7 +2149,7 @@ var GeneSelectField = createClass({
     return {
       removeSelected: true,
       disabled: false,
-      stayOpen: false,
+      stayOpen: true,
       multi: false,
       value: undefined,
       rtl: false,
@@ -1918,6 +2175,51 @@ var GeneSelectField = createClass({
           onChange={this.handleSelectChange}
           options={options}
           placeholder="Choose a gene"
+          removeSelected={this.state.removeSelected}
+          rtl={this.state.rtl}
+          simpleValue
+          value={value}
+        />
+      </div>
+    );
+  }
+});
+
+var VirusSelectField = createClass({
+  displayName: 'SingleSelectField',
+  propTypes: {
+    label: PropTypes.string,
+  },
+  getInitialState() {
+    return {
+      removeSelected: true,
+      disabled: false,
+      stayOpen: true,
+      multi: false,
+      value: undefined,
+      rtl: false,
+    };
+  },
+  handleSelectChange(value) {
+    this.setState({ value });
+    this.props.changeSelection(value);
+  },
+
+  render() {
+    const { disabled, stayOpen, value } = this.state;
+    const options = [
+      { value: 'CMV', label: 'CMV' },
+      { value: 'HSV-1', label: 'HSV-1' },
+      { value: 'HSV-2', label: 'HSV-2' }
+    ]
+    return (
+      <div className="section">
+        <Select
+          closeOnSelect={stayOpen}
+          disabled={disabled}
+          onChange={this.handleSelectChange}
+          options={options}
+          placeholder="Choose a virus"
           removeSelected={this.state.removeSelected}
           rtl={this.state.rtl}
           simpleValue

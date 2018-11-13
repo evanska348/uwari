@@ -305,3 +305,30 @@ body {
   margin-top: 10vh;
   margin-left: 0;
 }
+
+.md-form label{
+  color: black;
+}
+
+.md-form input[type=variant], .md-form input[type=reference], .md-form input[type=comments] {
+  border: none;
+  border-bottom: 1px solid #009688;
+}
+
+.md-form input[type=variant]:focus:not([readonly])+label,
+.md-form input[type=reference]:focus:not([readonly])+label,
+.md-form input[type=comments]:focus:not([readonly])+label{
+  color: #009688;
+}
+
+.md-form input[type=variant]:focus:not([readonly]),
+.md-form input[type=reference]:focus:not([readonly]),
+.md-form input[type=comments]:focus:not([readonly]) {
+  border: none;
+  box-shadow: 0 2px 0 0 #009688;
+  border-bottom:1px solid #009688;
+}
+
+.FileInput-headers {
+  margin-top: 10vh;
+}
