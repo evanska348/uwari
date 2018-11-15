@@ -17,6 +17,8 @@ import 'font-awesome/css/font-awesome.min.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'mdbreact/dist/css/mdb.css';
 import './App.css';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 //ssh evanzhao@vergil.u.washington.edu
 
@@ -144,14 +146,14 @@ class App extends Component {
                     <Dropdown>
                       <DropdownToggle nav caret>File Input</DropdownToggle>
                       <DropdownMenu>
-                      <DropdownItem>
+                        <DropdownItem>
                           <NavLink className="nav-link waves-effect waves-light" to="/CMVFileInput">CMV</NavLink>
                         </DropdownItem>
                         <DropdownItem>
-                        <NavLink className="nav-link waves-effect waves-light" to="/HSV1FileInput">HSV-1</NavLink>
+                          <NavLink className="nav-link waves-effect waves-light" to="/HSV1FileInput">HSV-1</NavLink>
                         </DropdownItem>
                         <DropdownItem>
-                        <NavLink className="nav-link waves-effect waves-light" to="/HSV2FileInput">HSV-2</NavLink>
+                          <NavLink className="nav-link waves-effect waves-light" to="/HSV2FileInput">HSV-2</NavLink>
                         </DropdownItem>
                       </DropdownMenu>
                     </Dropdown>
@@ -465,7 +467,15 @@ class CMVFileInput extends Component {
       }
     }
     if (fasta_sequence.charAt(0) !== 'M') {
-      console.log('Protein sequence most likely sucks')
+      toast.error("UL54 sequence should start with Methionine!", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
     let data = [];
     for (let i = 0; i < polystate.length; i++) {
@@ -503,7 +513,15 @@ class CMVFileInput extends Component {
       }
     }
     if (fasta_sequence.charAt(0) !== 'M') {
-      console.log('Protein sequence most likely sucks')
+      toast.error("UL97 sequence should start with Methionine!", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
     let data = [];
     for (let i = 0; i < phosstate.length; i++) {
@@ -540,7 +558,15 @@ class CMVFileInput extends Component {
       }
     }
     if (fasta_sequence.charAt(0) !== 'M') {
-      console.log('Protein sequence most likely sucks')
+      toast.error("UL56 sequence should start with Methionine!", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
     let data = [];
     for (let i = 0; i < termstate.length; i++) {
@@ -597,6 +623,8 @@ class CMVFileInput extends Component {
                 <input type="file"></input>
                 <textarea className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL97</button>
+                <button onClick={this.notify}>Notify !</button>
+                <ToastContainer />
               </div>
           }
         </div>
