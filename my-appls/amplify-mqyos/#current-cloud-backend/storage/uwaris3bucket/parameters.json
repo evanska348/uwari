@@ -1,0 +1,9 @@
+{
+    "bucketName": "uwaris3bucket",
+    "authPolicyName": "s3_amplify_4b4adad1",
+    "unauthPolicyName": "s3_amplify_4b4adad1",
+    "authRoleName": "myappls-20181212170230-authRole",
+    "unauthRoleName": "myappls-20181212170230-unauthRole",
+    "authPermissions": "rw",
+    "unauthPermissions": "rw"
+}

@@ -1,0 +1,11 @@
+{
+    "appName": "uwari",
+    "roleName": "pinpointLambdaRole3d24015f",
+    "cloudWatchPolicyName": "cloudWatchPolicy3d24015f",
+    "pinpointPolicyName": "pinpointPolicy3d24015f",
+    "authPolicyName": "pinpoint_amplify_3d24015f",
+    "unauthPolicyName": "pinpoint_amplify_3d24015f",
+    "authRoleName": "myappls-20181212170230-authRole",
+    "unauthRoleName": "myappls-20181212170230-unauthRole",
+    "IAMPrefix": "497093283193"
+}

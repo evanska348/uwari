@@ -5,10 +5,11 @@ import { NavLink } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import Select from 'react-select';
 import createClass from 'create-react-class';
-import firebase from 'firebase';
 import { withRouter } from "react-router";
+import firebase from 'firebase';
+import Modal from 'react-modal';
 import 'firebase/auth';
-import { NavbarToggler, Collapse, Navbar, NavbarBrand, NavItem, NavbarNav, Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'mdbreact'
+import { NavbarToggler, MDBCollapse, Navbar, NavbarBrand, NavItem, NavbarNav, Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'mdbreact'
 import { Col, Container, Row, Footer, Input } from 'mdbreact';
 import 'firebase/firestore';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table'
@@ -19,8 +20,47 @@ import 'mdbreact/dist/css/mdb.css';
 import './App.css';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import aws_exports from './aws-exports';
+import { withAuthenticator, S3Album } from 'aws-amplify-react';
+import Amplify, { Analytics, Storage } from 'aws-amplify';
+import AWS from 'aws-sdk';
+import axios from 'axios';
+import Tooltip from "react-simple-tooltip"
+import { css } from "styled-components"
 
-//ssh evanzhao@vergil.u.washington.edu
+Amplify.configure(aws_exports);
+// import Amplify, { Storage } from 'aws-amplify';
+// import aws_exports from './aws-exports';
+// Amplify.configure(aws_exports);
+// import { withAuthenticator, S3Album } from 'aws-amplify-react';
+// ssh evanzhao@vergil.u.washington.edu
+
+//user evanzhao
+//access AKIAIZQTUU4ARPFOXUOA
+//secret 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
+
+// Amplify.configure(
+//   {
+//   Auth: {
+//     identityPoolId: 'us-east-1:9de0bf5b-a595-4262-a048-c69649e11ca5', //REQUIRED - Amazon Cognito Identity Pool ID
+//     region: 'us-east-1', // REQUIRED - Amazon Cognito Region
+//     // userPoolId: 'XX-XXXX-X_abcd1234', //OPTIONAL - Amazon Cognito User Pool ID
+//     //  userPoolWebClientId: 'XX-XXXX-X_abcd1234', //OPTIONAL - Amazon Cognito Web Client ID
+//   },
+//   Storage: {
+//     bucket: 'arn:aws:s3:::uwari-20181216120843--hostingbucket/*', //REQUIRED -  Amazon S3 bucket
+//     region: 'us-west-2', //OPTIONAL -  Amazon service region
+//   }
+// }
+// );
+
+// Storage.configure({
+//   bucket: 'uwari-20181216120843--hostingbucket', //Your bucket ARN;
+//   region: 'us-west-2',
+//   identityPoolId: 'us-east-1:9de0bf5b-a595-4262-a048-c69649e11ca5'
+// });
+
+// AWS.config.credentials = Auth.essentialCredentials(await Auth.currentCredentials());
 
 var config = {
   apiKey: "AIzaSyBGflsX38vQ4SVYcsPDXySUmIWZFnbIwao",
@@ -30,9 +70,29 @@ var config = {
   storageBucket: "cmvdb-555bc.appspot.com",
   messagingSenderId: "869787015915"
 };
+
+//abi ab1 fastq fasta
+//agrening@uw.edu
+//keithjerome123!
+//object in website
+//upload s3 bucket
+//lambda trigger aws batch on what is in the bucket - fetch and run
+//docker image ported to aws batch
+//website would listening for s3 bucket return
+
+
+
+const s3config = {
+  bucketName: 'ari-input',
+  dirName: 'input', /* optional */
+  region: 'us-east-1',
+  accessKeyId: 'AKIAJTA5QUHLBAHKYXZA',
+  secretAccessKey: 'rKLalCNyvjQZKCzsplGUg+vVlAT2ZBr/D/NckdSd',
+}
+
 firebase.initializeApp(config);
 const firestore = firebase.firestore();
-const settings = {/* your settings... */ timestampsInSnapshots: true };
+const settings = {};
 firestore.settings(settings);
 const db = firebase.firestore();
 
@@ -46,7 +106,8 @@ class App extends Component {
       collapse: false,
       isWideEnough: false,
       dropdownOpen: false,
-      drugs: []
+      drugs: [],
+      collapseID: ''
     };
     this.onClick = this.onClick.bind(this);
     this.toggle = this.toggle.bind(this);
@@ -60,7 +121,8 @@ class App extends Component {
         snapshot
           .docs
           .forEach(doc => {
-            var object = JSON.parse(doc._document.data)
+            let object = doc.data()
+            // let object = JSON.parse(doc._document.data)
             var keys = Object.keys(object);
             var i;
             for (i = 0; i < keys.length; i++) {
@@ -73,6 +135,7 @@ class App extends Component {
           });
       });
   }
+
 
   //Handles Logout
   handleLogout() {
@@ -117,6 +180,10 @@ class App extends Component {
     });
   }
 
+  toggleCollapse = collapseID => () => {
+    this.setState(prevState => ({ collapseID: (prevState.collapseID !== collapseID ? collapseID : '') }));
+  }
+
   render() {
     return (
       <div className="parent" >
@@ -127,39 +194,59 @@ class App extends Component {
               <NavbarBrand href="/WelcomePage">
                 <strong>UW Antiviral Resistance Interpretation</strong>
               </NavbarBrand>
-              {!this.state.isWideEnough && <NavbarToggler onClick={this.onClick} />}
-              <Collapse navbar>
+              {!this.state.isWideEnough && <NavbarToggler onClick={this.toggleCollapse('navbarCollapse1')} />}
+              <MDBCollapse id="navbarCollapse1" isOpen={this.state.collapseID} navbar>
                 <NavbarNav left>
                   <NavItem>
                     <NavLink exact className="nav-link waves-effect waves-light" aria-haspopup="true" aria-expanded="false" to="/WelcomePage">Home</NavLink>
                   </NavItem>
-                  <NavItem>
-                    <NavLink className="nav-link waves-effect waves-light" to="/CMVdb">CMVdb</NavLink>
-                  </NavItem>
-                  <NavItem>
-                    <NavLink className="nav-link waves-effect waves-light" to="/HSV1db">HSV-1db</NavLink>
-                  </NavItem>
-                  <NavItem>
-                    <NavLink className="nav-link waves-effect waves-light" to="/HSV2db">HSV-2db</NavLink>
-                  </NavItem>
+
                   <NavItem>
                     <Dropdown>
-                      <DropdownToggle nav caret>File Input</DropdownToggle>
+                      <DropdownToggle nav caret>CMVb</DropdownToggle>
+                      <DropdownMenu basic>
+                        <DropdownItem>
+                          <NavLink className="nav-link waves-effect waves-light" to="/CMVdb">CMV Manual Input</NavLink>
+                        </DropdownItem>
+                        <DropdownItem>
+                          <NavLink className="nav-link waves-effect waves-light dropdown" to="/CMVFileInput">CMV File Input</NavLink>
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
+                  </NavItem>
+
+                  <NavItem>
+                    <Dropdown>
+                      <DropdownToggle nav caret>HSV-1db</DropdownToggle>
                       <DropdownMenu>
                         <DropdownItem>
-                          <NavLink className="nav-link waves-effect waves-light" to="/CMVFileInput">CMV</NavLink>
+                          <NavLink className="nav-link waves-effect waves-light" to="/HSV1db">HSV-1 Manual Input</NavLink>
                         </DropdownItem>
                         <DropdownItem>
-                          <NavLink className="nav-link waves-effect waves-light" to="/HSV1FileInput">HSV-1</NavLink>
+                          <NavLink className="nav-link waves-effect waves-light dropdown" to="/HSV1FileInput">HSV-1 File Input</NavLink>
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
+                  </NavItem>
+
+                  <NavItem>
+                    <Dropdown>
+                      <DropdownToggle nav caret>HSV-2db</DropdownToggle>
+                      <DropdownMenu>
+                        <DropdownItem>
+                          <NavLink className="nav-link waves-effect waves-light" to="/HSV2db">HSV-2 Manual Input</NavLink>
                         </DropdownItem>
                         <DropdownItem>
-                          <NavLink className="nav-link waves-effect waves-light" to="/HSV2FileInput">HSV-2</NavLink>
+                          <NavLink className="nav-link waves-effect waves-light dropdown" to="/HSV2FileInput">HSV-2 File Input</NavLink>
                         </DropdownItem>
                       </DropdownMenu>
                     </Dropdown>
                   </NavItem>
                 </NavbarNav>
                 <NavbarNav right>
+                  <NavItem>
+                    <NavLink className="nav-link waves-effect waves-light" to="/pending-files">File Library</NavLink>
+                  </NavItem>
                   <NavItem>
                     <Dropdown toggle={this.toggle}>
                       <DropdownToggle nav caret><i className="fa fa-user" aria-hidden="true"></i></DropdownToggle>
@@ -179,6 +266,9 @@ class App extends Component {
                               <NavLink className="nav-link waves-effect waves-light" to="/AddVariants">Add Variants</NavLink>
                             </DropdownItem>
                             <DropdownItem>
+                              <NavLink className="nav-link waves-effect waves-light" to="/Saved-Sequences">Saved Sequences</NavLink>
+                            </DropdownItem>
+                            <DropdownItem>
                               <NavLink className="logoutButton" onClick={this.handleLogout} to="/login">Logout</NavLink>
                             </DropdownItem>
                             {/* <button type='button' className="btn btn-danger btn-sm" onClick={this.handleLogout}>Logout</button> */}
@@ -188,9 +278,15 @@ class App extends Component {
                     </Dropdown>
                   </NavItem>
                 </NavbarNav>
-              </Collapse>
+              </MDBCollapse>
             </Navbar>
             <Route exact path="/evanzhao/uw/uwari/" component={WelcomePage} />
+            <Route path="/Saved-Sequences" render={(props) => (
+              <SavedSequences {...props} uid={this.state.user.uid} user={this.state.user} />
+            )} />
+            <Route path="/pending-files" render={(props) => (
+              <PendingFiles {...props} uid={this.state.user.uid} user={this.state.user} />
+            )} />
             <Route path="/WelcomePage" component={WelcomePage} />
             <Route path="/CMVdb" component={CMVdb} />
             <Route path="/HSV1db" component={HSV1db} />
@@ -233,6 +329,80 @@ class App extends Component {
   }
 }
 
+{/* <Navbar color="teal" dark expand="md" scrolling>
+<NavbarBrand href="/WelcomePage">
+  <strong>UW Antiviral Resistance Interpretation</strong>
+</NavbarBrand>
+{!this.state.isWideEnough && <NavbarToggler onClick={this.toggleCollapse('navbarCollapse1')} />}
+<MDBCollapse id="navbarCollapse1" isOpen={this.state.collapseID} navbar>
+  <NavbarNav left>
+    <NavItem>
+      <NavLink exact className="nav-link waves-effect waves-light" aria-haspopup="true" aria-expanded="false" to="/WelcomePage">Home</NavLink>
+    </NavItem>
+    <NavItem>
+      <NavLink className="nav-link waves-effect waves-light" to="/CMVdb">CMVdb</NavLink>
+    </NavItem>
+    <NavItem>
+      <NavLink className="nav-link waves-effect waves-light" to="/HSV1db">HSV-1db</NavLink>
+    </NavItem>
+    <NavItem>
+      <NavLink className="nav-link waves-effect waves-light" to="/HSV2db">HSV-2db</NavLink>
+    </NavItem>
+    <NavItem>
+      <Dropdown>
+        <DropdownToggle nav caret>File Input</DropdownToggle>
+        <DropdownMenu>
+          <DropdownItem>
+            <NavLink className="nav-link waves-effect waves-light dropdown" to="/CMVFileInput">CMV</NavLink>
+          </DropdownItem>
+          <DropdownItem>
+            <NavLink className="nav-link waves-effect waves-light dropdown" to="/HSV1FileInput">HSV-1</NavLink>
+          </DropdownItem>
+          <DropdownItem>
+            <NavLink className="nav-link waves-effect waves-light dropdown" to="/HSV2FileInput">HSV-2</NavLink>
+          </DropdownItem>
+        </DropdownMenu>
+      </Dropdown>
+    </NavItem>
+  </NavbarNav>
+  <NavbarNav right>
+    <NavItem>
+      <NavLink className="nav-link waves-effect waves-light" to="/pending-files">File Library</NavLink>
+    </NavItem>
+    <NavItem>
+      <Dropdown toggle={this.toggle}>
+        <DropdownToggle nav caret><i className="fa fa-user" aria-hidden="true"></i></DropdownToggle>
+        <DropdownMenu right>
+          {this.state.user === '' ?
+            <div>
+              <DropdownItem>
+                <NavLink className="nav-link waves-effect waves-light" to="#" disabled>Login to add Variants</NavLink>
+              </DropdownItem >
+  <DropdownItem>
+    <NavLink className="nav-link waves-effect waves-light" to="/login">Login</NavLink>
+  </DropdownItem>
+            </div >
+            :
+<div>
+  <DropdownItem>
+    <NavLink className="nav-link waves-effect waves-light" to="/AddVariants">Add Variants</NavLink>
+  </DropdownItem>
+  <DropdownItem>
+    <NavLink className="nav-link waves-effect waves-light" to="/Saved-Sequences">Saved Sequences</NavLink>
+  </DropdownItem>
+  <DropdownItem>
+    <NavLink className="logoutButton" onClick={this.handleLogout} to="/login">Logout</NavLink>
+  </DropdownItem>
+  <button type='button' className="btn btn-danger btn-sm" onClick={this.handleLogout}>Logout</button>
+</div>
+          }
+        </DropdownMenu >
+      </Dropdown >
+    </NavItem >
+  </NavbarNav >
+</MDBCollapse >
+</Navbar > */}
+
 class WelcomePage extends Component {
   render() {
     return (
@@ -258,6 +428,207 @@ class WelcomePage extends Component {
         </div>
       </div>
     );
+  }
+}
+
+class SavedSequences extends Component {
+  constructor() {
+    super();
+  }
+  render() {
+    return (
+      <div className="container">
+        <h2 className='pageheader'>Saved Sequences for {this.props.user.email}</h2>
+        <div style={{ height: "50vh", background: '#cbefec', border: '1px solid #009688', padding: '1rem', borderRadius: '5px' }}>
+
+        </div>
+      </div>
+    )
+  }
+}
+
+class PendingFiles extends Component {
+
+  constructor() {
+    super();
+
+    this.state = {
+      modalIsOpen: false,
+    };
+
+    this.openModal = this.openModal.bind(this);
+    this.afterOpenModal = this.afterOpenModal.bind(this);
+    this.closeModal = this.closeModal.bind(this);
+  }
+
+  openModal() {
+    this.setState({ modalIsOpen: true });
+  }
+
+  afterOpenModal() {
+    // references are now sync'd and can be accessed.
+    this.subtitle.style.color = '#f00';
+  }
+
+  closeModal() {
+    this.setState({ modalIsOpen: false });
+  }
+
+  render() {
+    const customStyles = {
+      content: {
+        top: '50%',
+        left: '50%',
+        right: 'auto',
+        bottom: 'auto',
+        marginRight: '-50%',
+        transform: 'translate(-50%, -50%)'
+      }
+    };
+    return (
+      <div className="container">
+        <h2 className="pageheader">
+          File Library
+      </h2>
+        {this.props.user != 0 ?
+          <div>
+            <p>{this.props.user.email}'s Library</p>
+          </div>
+          :
+          <div>
+            <p>Current Session Library</p>
+          </div>
+        }
+        <div style={{ background: '#cbefec', border: '1px solid #009688', padding: '1rem', borderRadius: '5px', marginBottom: '1rem' }}>
+          <h3>
+            Completed
+      </h3>
+          <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
+            <FileCardComplete delete={this.openModal} filename='hsv.ab1' variants='H382V' virustype='HSV-1' date='00/00/00'></FileCardComplete>
+            <FileCardComplete delete={this.openModal} filename='cmv.fasta' variants='I223C' virustype='CMV' date='00/00/00'></FileCardComplete>
+          </div>
+        </div>
+        <div style={{ background: '#cbefec', border: '1px solid #009688', padding: '1rem', borderRadius: '5px', marginBottom: '1rem' }}>
+          <h3>
+            Pending
+      </h3>
+          <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
+            <FileCardIncomplete delete={this.openModal} filename='cmv2.fasta' status='Running' virustype='CMV' date='00/00/00'></FileCardIncomplete>
+          </div>
+        </div>
+
+        <Modal
+          isOpen={this.state.modalIsOpen}
+          onAfterOpen={this.afterOpenModal}
+          onRequestClose={this.closeModal}
+          style={customStyles}
+          contentLabel="Example Modal"
+        >
+
+          <h2 ref={subtitle => this.subtitle = subtitle}>Are you sure you want to delete this sequence?</h2>
+          <form>
+            <button className='btn btn-danger' onClick={this.closeModal}>yes</button>
+            <button className='btn btn-primary' onClick={this.closeModal}>no</button>
+          </form>
+        </Modal>
+      </div>
+    )
+  }
+}
+
+class FileCardComplete extends Component {
+
+  constructor() {
+    super();
+    this.state = {
+      saved: false
+    }
+  }
+
+  click = () => {
+    this.props.delete();
+  }
+  handleSave = () => {
+    this.setState({ saved: true })
+    let UserRef = firebase.database().ref('Users');
+    let foundKey = false;
+    Object.keys(UserRef).forEach((key) => {
+      if (key === this.props.uid) {
+        foundKey = true;
+        UserRef.child(key).child('SaveSeq').push({
+          Name: this.props.filename + this.props.date + this.props.virus,
+        }).catch(err => console.log(err));
+      }
+    }
+    )
+    if (!foundKey) {
+      firebase.database().ref('Users/' + this.props.uid + '/SaveSeq/' + this.props.id + "/").set(
+        {
+          Name: this.props.filename + this.props.date + this.props.virus,
+        }
+      ).catch(err => console.log(err));
+    }
+
+    foundKey = false;
+  }
+
+
+
+  componentDidMount() {
+    if (this.props.uid !== undefined) {
+      let ref = firebase.database().ref('Users').child(this.props.uid).child('Climbs');
+      ref.on('value', (snapshot) => {
+        this.setState({
+          climbs: snapshot.val()
+        });
+        console.log(this.state.climbs);
+
+        console.log(snapshot.val())
+      })
+
+    }
+  }
+
+  render() {
+    return (
+      <div className='filecard'>
+        <a style={{ float: 'right' }} onClick={this.click}><i className="fa fa-remove" aria-hidden="true" /></a>
+        <h4 style={{ marginBottom: 0 }}><strong>{this.props.filename}</strong> - {this.props.date}</h4>
+        <p style={{ marginBottom: 0 }}>Virus: {this.props.virustype}</p>
+        <p style={{ marginBottom: 0 }}>Summary Variants: {this.props.variants}</p>
+        <div style={{ display: 'flex', flexDirection: 'row' }}>
+          <button style={{ marginBottom: 0, padding: '.4rem' }} className='btn btn-primary btn-sm'>Full Results</button>
+          {this.state.saved ?
+            <p style={{ marginTop: '1rem', color: 'green' }}>Saved</p>
+            :
+            <button style={{ marginBottom: 0, padding: '.4rem' }} className='btn btn-primary btn-sm' onClick={this.handleSave}>Save</button>
+          }
+        </div>
+      </div>
+    )
+  }
+}
+
+class FileCardIncomplete extends Component {
+  constructor() {
+    super();
+    this.state = {
+    }
+  }
+
+  click = () => {
+    this.props.delete();
+  }
+
+  render() {
+    return (
+      <div style={{ border: '1px solid lightcoral' }} className='filecard'>
+        <a style={{ float: 'right' }} onClick={this.click}><i className="fa fa-remove" aria-hidden="true" /></a>
+        <h4 style={{ marginBottom: 0 }}><strong>{this.props.filename}</strong> - {this.props.date}</h4>
+        <p style={{ marginBottom: 0 }}>Virus: {this.props.virustype}</p>
+        <p style={{ marginBottom: 0 }}>Status: {this.props.status}</p>
+      </div>
+    )
   }
 }
 
@@ -302,38 +673,342 @@ class HSV1FileInput extends Component {
 
   constructor() {
     super();
+    this.updateInput54 = this.updateInput54.bind(this);
+    this.updateInput56 = this.updateInput56.bind(this);
     this.state = {
+      file: null,
       submitClicked: false,
+      input: '',
+      poly: [],
+      term: [],
+      selecteddrugs: [],
+      drugs: [],
+      selected54poly: [],
+      selected56term: [],
+      loaded: false
     }
   }
 
+  // componentWillMount() {
+  //   var drugarray = [];
+  //   var drugobj = [];
+  //   db
+  //     .collection('HSVdrug')
+  //     .get()
+  //     .then(snapshot => {
+  //       snapshot
+  //         .docs
+  //         .forEach(doc => {
+  //           var object = JSON.parse(doc._document.data)
+  //           var keys = Object.keys(object);
+  //           var i;
+  //           for (i = 0; i < keys.length; i++) {
+  //             drugarray.push(keys[i])
+  //             drugobj.push({
+  //               label: keys[i],
+  //               value: keys[i]
+  //             })
+  //           }
+  //           this.setState({ drugs: drugobj })
+  //           this.setState({ selecteddrugs: drugarray })
+  //           this.setState({
+  //             loaded: true
+  //           });
+  //         });
+  //     });
+  //   var epistasis = []
+  //   db
+  //     .collection('epistaticvariants')
+  //     .get()
+  //     .then(snapshot => {
+  //       snapshot
+  //         .docs
+  //         .forEach(doc => {
+  //           var object = doc.data()
+  //           epistasis.push(object)
+  //           this.setState({ epistasis: epistasis });
+  //         });
+  //     });
+  //     var HSV1ThymidineKinase = []
+  //     db
+  //       .collection('HSV1resistance')
+  //       .doc("HSV1resistance")
+  //       .collection("HSV1ThymidineKinase")
+  //       .get()
+  //       .then(snapshot => {
+  //         snapshot
+  //           .docs
+  //           .forEach(doc => {
+  //             var object = doc.data().Variant
+  //             HSV1ThymidineKinase.push({ label: object, value: object })
+  //             this.setState({ poly: HSV1ThymidineKinase })
+  //           });
+  //       });
+
+  //     var HSV1Polymerase = []
+  //     db
+  //       .collection('HSV1resistance')
+  //       .doc("HSV1resistance")
+  //       .collection("HSV1Polymerase")
+  //       .get()
+  //       .then(snapshot => {
+  //         snapshot
+  //           .docs
+  //           .forEach(doc => {
+  //             var object = doc.data().Variant
+  //             HSV1Polymerase.push({ label: object, value: object })
+  //             this.setState({ term: HSV1Polymerase })
+  //           });
+  //       });
+  // }
+
+  componentWillMount() {
+    var drugarray = [];
+    var drugobj = [];
+    db
+      .collection('HSVdrug')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            // var object = JSON.parse(doc._document.data)
+            var object = doc.data();
+            var keys = Object.keys(object);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+              drugarray.push(keys[i])
+              drugobj.push({
+                label: keys[i],
+                value: keys[i]
+              })
+            }
+            this.setState({ drugs: drugobj })
+            this.setState({ selecteddrugs: drugarray })
+            this.setState({
+              loaded: true
+            });
+          });
+      });
+    var ul54polymerasevariants = []
+    db
+      .collection('HSV1resistance')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            ul54polymerasevariants.push({ label: object, value: object })
+            this.setState({ poly: ul54polymerasevariants })
+          });
+      });
+
+    var UL56terminase = []
+    db
+      .collection('ul56terminasevariants')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            UL56terminase.push({ label: object, value: object })
+            this.setState({ term: UL56terminase })
+          });
+      });
+  }
+
   handleSubmit() {
-    this.setState({ submitClicked: !this.state.submitClicked })
+    if (this.state.selected54poly === [] &&
+      this.state.selected56term === []) {
+      this.setState({ empty: true });
+      console.log("YOOOO")
+    } else {
+      let drugarray = [];
+      for (let i = 0; i < this.state.drugs.length; i++) {
+        drugarray.push(this.state.drugs[i].label)
+      }
+      this.setState({ empty: false });
+      if (this.state.submitClicked === true) {
+        this.setState({
+          selecteddrugs: drugarray,
+          selected54poly: [],
+          selected56term: [],
+        })
+      }
+      this.setState({ submitClicked: !this.state.submitClicked })
+    }
+  }
+
+  updateInput54(event) {
+    this.setState({ input: event.target.value })
+    this.setState({ txt97: event.target.value })
+    let termstate = [];
+    let fasta_sequence = event.target.value;
+    for (let i = 0; i < this.state.term.length; i++) {
+      let variant = this.state.term[i].value;
+      if (variant.match(/\d+/g) !== null) {
+        let loc = variant.match(/\d+/g).map(Number)[0];
+        if (fasta_sequence.charAt(loc - 1) === variant[variant.length - 1]) {
+          termstate.push(variant)
+        }
+      }
+    }
+    if (fasta_sequence.length > 30) {
+      toast.success("UL97 sequence alignment finished!", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+    let data = [];
+    for (let i = 0; i < termstate.length; i++) {
+      let docRef = db.collection("ul97phosphotransferasevariants").doc(termstate[i]);
+      docRef.get().then(function (doc) {
+        if (doc.exists) {
+          data.push(doc.data());
+        }
+      }).catch(function (error) {
+        console.log("Error getting document:", error);
+      });
+    }
+    this.setState({ selected97phos: data })
+  }
+
+  updateInput56(event) {
+    this.setState({ input: event.target.value })
+    let polstate = [];
+    let fasta_sequence = event.target.value;
+    for (let i = 0; i < this.state.pol.length; i++) {
+      let variant = this.state.pol[i].value;
+      if (variant.match(/\d+/g) !== null) {
+        let loc = variant.match(/\d+/g).map(Number)[0];
+        if (fasta_sequence.charAt(loc - 1) === variant[variant.length - 1]) {
+          polstate.push(variant)
+        }
+      }
+    }
+    if (fasta_sequence.length > 30) {
+      toast.success("UL56 sequence alignment finished!", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+    let data = [];
+    for (let i = 0; i < polstate.length; i++) {
+      let docRef = db.collection("ul56terminasevariants").doc(polstate[i]);
+      docRef.get().then(function (doc) {
+        if (doc.exists) {
+          data.push(doc.data());
+        }
+      }).catch(function (error) {
+        console.log("Error getting document:", error);
+      });
+    }
+    this.setState({ selected56term: data })
   }
 
 
+  submitFile = (gene) => (event) => {
+    const formData = new FormData();
+    formData.append('file', event.target.files[0]);
+    formData.append('string', gene)
+    var headers = {
+      'Content-Type': 'multipart/form-data',
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
+    }
+    axios.post(`http://localhost:9000/test-upload`, formData, {
+      headers: headers
+    }).then(response => {
+      console.log(response.data)
+      if (gene === 'hsv1tk') {
+        this.updateInput54({ target: { value: response.data } });
+        this.setState({ txt54: response.data });
+      } else if (gene === 'hsv1pol') {
+        this.updateInput56({ target: { value: response.data } });
+        this.setState({ txt56: response.data });
+      }
+    }).catch(error => {
+      console.log(error)
+    });
+    console.log("done")
+  }
+
+  onChangeSelectionDrug(value) {
+    let drugsarr = value.split(',');
+    this.setState({
+      selecteddrugs: drugsarr
+    });
+  }
+
 
   render() {
-    return (
-      <div className="container">
-        {
-          this.state.submitClicked ?
-            <div>
+    var descriptionTool = <p>Choose an AB1 or FASTA file from your computer.<br /> Once a suitable alignment appears in the textbox below, click analyze.</p>;
+    if (this.state.loaded) {
+      return (
+        <div className="container">
+          {
+            this.state.submitClicked ?
               <div>
-                <h2 className="pageheader">Results:</h2>
-                <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                <div>
+                  <p>{this.state.mutation_list}</p>
+                  <Results selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                </div>
               </div>
-            </div>
-            :
-            <div>
-              <h2 className="pageheader">HSV-1 File Input</h2>
-              <input type="file"></input>
-              <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary  fileSubmit" type="submit">Analyze</button>
-            </div>
-        }
-      </div>
-    )
+              :
+              <div>
+                <h2 className="pageheader"> HSV-1 File Input</h2>
+                <p className='druglabel'>Drug Selection</p>
+                <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
+
+                <h3 style={{ display: 'inline-block' }} className='FileInput-headers'><strong>UL23 - Thymidine Kinase</strong></h3>
+                <Tooltip
+                  style={{ display: 'inline-block' }}
+                  multiline='true'
+                  content={descriptionTool}
+                  customCss={css`white-space: nowrap;`}>
+                  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
+                </Tooltip>
+                <input label='upload file' type='file' onChange={this.submitFile('hsv1tk')} />
+                <textarea value={this.state.txt54} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL56</button>
+
+                <h3 className='FileInput-headers' style={{ display: 'inline-block' }}><strong>UL30 - DNA Polymerase</strong></h3>
+                <Tooltip
+                  style={{ display: 'inline-block' }}
+                  multiline='true'
+                  content={descriptionTool}
+                  customCss={css`white-space: nowrap;`}>
+                  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
+                </Tooltip>
+                <input label='upload file' type='file' onChange={this.submitFile('hsv1pol')} />
+                <textarea value={this.state.txt56} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL97</button>
+                <ToastContainer />
+              </div>
+          }
+        </div>
+      )
+    } else {
+      return (
+        <div className="loaderContainer">
+          <div className="loader"></div>
+        </div>
+      );
+    }
   }
 }
 
@@ -345,6 +1020,7 @@ class CMVFileInput extends Component {
     this.updateInput56 = this.updateInput56.bind(this);
     this.updateInput97 = this.updateInput97.bind(this);
     this.state = {
+      file: null,
       submitClicked: false,
       input: '',
       poly: [],
@@ -359,7 +1035,7 @@ class CMVFileInput extends Component {
     }
   }
 
-  componentDidMount() {
+  componentWillMount() {
     var drugarray = [];
     var drugobj = [];
     db
@@ -369,7 +1045,8 @@ class CMVFileInput extends Component {
         snapshot
           .docs
           .forEach(doc => {
-            var object = JSON.parse(doc._document.data)
+            // var object = JSON.parse(doc._document.data)
+            var object = doc.data();
             var keys = Object.keys(object);
             var i;
             for (i = 0; i < keys.length; i++) {
@@ -455,6 +1132,7 @@ class CMVFileInput extends Component {
 
   updateInput54(event) {
     this.setState({ input: event.target.value })
+    console.log(event)
     let polystate = [];
     let fasta_sequence = event.target.value;
     for (let i = 0; i < this.state.poly.length; i++) {
@@ -466,8 +1144,8 @@ class CMVFileInput extends Component {
         }
       }
     }
-    if (fasta_sequence.charAt(0) !== 'M') {
-      toast.error("UL54 sequence should start with Methionine!", {
+    if (fasta_sequence.length > 30) {
+      toast.success("UL54 sequence is ready", {
         toastId: 13,
         position: "top-right",
         autoClose: 5000,
@@ -501,6 +1179,7 @@ class CMVFileInput extends Component {
 
   updateInput97(event) {
     this.setState({ input: event.target.value })
+    this.setState({ txt97: event.target.value })
     let phosstate = [];
     let fasta_sequence = event.target.value;
     for (let i = 0; i < this.state.phos.length; i++) {
@@ -512,8 +1191,8 @@ class CMVFileInput extends Component {
         }
       }
     }
-    if (fasta_sequence.charAt(0) !== 'M') {
-      toast.error("UL97 sequence should start with Methionine!", {
+    if (fasta_sequence.length > 30) {
+      toast.success("UL97 sequence is ready!", {
         toastId: 13,
         position: "top-right",
         autoClose: 5000,
@@ -557,8 +1236,8 @@ class CMVFileInput extends Component {
         }
       }
     }
-    if (fasta_sequence.charAt(0) !== 'M') {
-      toast.error("UL56 sequence should start with Methionine!", {
+    if (fasta_sequence.length > 30) {
+      toast.success("Ready to analyze UL56", {
         toastId: 13,
         position: "top-right",
         autoClose: 5000,
@@ -589,9 +1268,113 @@ class CMVFileInput extends Component {
     });
   }
 
+  submitFile = (gene) => (event) => {
+    const formData = new FormData();
+    formData.append('file', event.target.files[0]);
+    formData.append('string', gene)
+    var headers = {
+      'Content-Type': 'multipart/form-data',
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
+    }
+    axios.post(`http://localhost:9000/test-upload`, formData, {
+      headers: headers
+    }).then(response => {
+      console.log(response.data)
+      if (gene === 'cmvphos') {
+        this.updateInput97({ target: { value: response.data } });
+        this.setState({ txt97: response.data });
+      } else if (gene === 'cmvterm') {
+        this.updateInput56({ target: { value: response.data } });
+        this.setState({ txt56: response.data });
+      } else if (gene === 'cmvpol') {
+        this.updateInput54({ target: { value: response.data } });
+        this.setState({ txt54: response.data });
+      }
+    }).catch(error => {
+      console.log(error)
+    });
+    console.log("done")
+  }
 
+  // submitFileTerm = (event) => {
+  //   event.preventDefault();
+  //   const formData = new FormData();
+  //   formData.append('file', this.state.file[0]);
+  //   formData.append('string', 'cmvpol')
+  //   var headers = {
+  //     'Content-Type': 'multipart/form-data',
+  //     "Access-Control-Allow-Origin": "*",
+  //     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+  //     "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
+  //   }
+  //   axios.post(`http://localhost:9000/test-upload`, formData, {
+  //     headers: headers
+  //   }).then(response => {
+  //     console.log(response.data)
+  //     this.updateInput97({ target: { value: response.data } })
+  //     this.setState({ txt97: response.data })
+  //   }).catch(error => {
+  //     console.log(error)
+  //   });
+  //   console.log("done")
+  // }
+
+  // submitFilePol = (event) => {
+  //   event.preventDefault();
+  //   const formData = new FormData();
+  //   formData.append('file', this.state.file[0]);
+  //   formData.append('string', 'cmvpol')
+  //   var headers = {
+  //     'Content-Type': 'multipart/form-data',
+  //     "Access-Control-Allow-Origin": "*",
+  //     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+  //     "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
+  //   }
+  //   axios.post(`http://localhost:9000/test-upload`, formData, {
+  //     headers: headers
+  //   }).then(response => {
+  //     console.log(response.data)
+  //     this.updateInput97({ target: { value: response.data } })
+  //     this.setState({ txt97: response.data })
+  //   }).catch(error => {
+  //     console.log(error)
+  //   });
+  //   console.log("done")
+  // }
+
+  // handleFileUploadPhos(event) {
+  //   // event.preventDefault();
+  //   // this.setState({ file: event.target.files });
+  //   const formData = new FormData();
+  //   formData.append('file', event.target.files);
+  //   formData.append('string', 'cmvphos')
+  //   console.log(event.target.files)
+  //   var headers = {
+  //     'Content-Type': 'multipart/form-data',
+  //     "Access-Control-Allow-Origin": "*",
+  //     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+  //     "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
+  //   }
+  //   axios.post(`http://localhost:9000/test-upload`, formData, {
+  //     headers: headers
+  //   }).then(response => {
+  //     console.log(response.data)
+  //     this.updateInput97({ target: { value: response.data } })
+  //     this.setState({ txt97: response.data })
+  //   }).catch(error => {
+  //     console.log(error)
+  //   });
+  //   console.log("done")
+  // }
+
+  // handleFileUpload = (event) => {
+  //   this.setState({ file: event.target.files });
+  // }
 
   render() {
+    var descriptionTool = <p>Choose an AB1 or FASTA file from your computer.<br /> Once a suitable alignment appears in the textbox below, click analyze.</p>;
     if (this.state.loaded) {
       return (
         <div className="container">
@@ -599,7 +1382,6 @@ class CMVFileInput extends Component {
             this.state.submitClicked ?
               <div>
                 <div>
-                  <h2 className="pageheader">Results:</h2>
                   <p>{this.state.mutation_list}</p>
                   <Results selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
                   <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
@@ -611,19 +1393,54 @@ class CMVFileInput extends Component {
                 {/* <input type="file"></input> */}
                 <p className='druglabel'>Drug Selection</p>
                 <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
-                <h3 className='FileInput-headers'><strong>UL54 - DNA Polymerase</strong></h3>
-                <input type="file"></input>
-                <textarea className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL54 FASTA Text Input" onChange={this.updateInput54}></textarea>
+
+
+                <h3 style={{ display: 'inline-block' }} className='FileInput-headers'><strong>UL54 - DNA Polymerase</strong></h3>
+                <Tooltip
+                  style={{ display: 'inline-block' }}
+                  multiline='true'
+                  content={descriptionTool}
+                  customCss={css`
+      white-space: nowrap;
+    `}
+                >  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
+                </Tooltip>
+                <input label='upload file' type='file' onChange={this.submitFile('cmvpol')} />
+                <textarea value={this.state.txt54} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL54 FASTA Text Input" onChange={this.updateInput54}></textarea>
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL54</button>
-                <h3 className='FileInput-headers'><strong>UL56 - Terminase</strong></h3>
-                <input type="file"></input>
-                <textarea className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea>
+
+
+                <h3 style={{ display: 'inline-block' }} className='FileInput-headers'><strong>UL56 - Terminase</strong></h3>
+                <Tooltip
+                  style={{ display: 'inline-block' }}
+                  multiline='true'
+                  content={descriptionTool}
+                  customCss={css`
+      white-space: nowrap;
+    `}
+                >  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
+                </Tooltip>
+                <input label='upload file' type='file' onChange={this.submitFile('cmvterm')} />
+                <textarea value={this.state.txt56} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea>
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL56</button>
-                <h3 className='FileInput-headers'><strong>UL97 - Phosphotransferase</strong></h3>
-                <input type="file"></input>
-                <textarea className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
+
+                <h3 className='FileInput-headers' style={{ display: 'inline-block' }}><strong>UL97 - Phosphotransferase</strong></h3>
+                <Tooltip
+                  style={{ display: 'inline-block' }}
+                  multiline='true'
+                  content={descriptionTool}
+                  customCss={css`
+      white-space: nowrap;
+    `}
+                >
+                  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
+                </Tooltip>
+                {/* <form onSubmit={this.submitFilePhos}> */}
+                <input label='upload file' type='file' onChange={this.submitFile('cmvphos')} />
+                {/* <button type='submit'>View Proteins from AB1</button>
+                </form> */}
+                <textarea value={this.state.txt97} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL97</button>
-                <button onClick={this.notify}>Notify !</button>
                 <ToastContainer />
               </div>
           }
@@ -665,7 +1482,8 @@ class HSV1db extends Component {
         snapshot
           .docs
           .forEach(doc => {
-            var object = JSON.parse(doc._document.data)
+            // var object = JSON.parse(doc._document.data)
+            var object = doc.data();
             var keys = Object.keys(object);
             var i;
             for (i = 0; i < keys.length; i++) {
@@ -861,7 +1679,8 @@ class HSV2db extends Component {
         snapshot
           .docs
           .forEach(doc => {
-            var object = JSON.parse(doc._document.data)
+            // var object = JSON.parse(doc._document.data)
+            var object = doc.data();
             var keys = Object.keys(object);
             var i;
             for (i = 0; i < keys.length; i++) {
@@ -1051,7 +1870,8 @@ class CMVdb extends Component {
         snapshot
           .docs
           .forEach(doc => {
-            var object = JSON.parse(doc._document.data)
+            // var object = JSON.parse(doc._document.data)
+            var object = doc.data()
             var keys = Object.keys(object);
             var i;
             for (i = 0; i < keys.length; i++) {
@@ -1238,11 +2058,6 @@ class CMVdb extends Component {
                 <h3><strong>UL97 - Phosphotransferase</strong></h3>
                 <MultiVarianceSelectField changeSelection={this.onChangeSelection97phos.bind(this)} input={this.state.phos}></MultiVarianceSelectField>
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
-                {this.state.empty ?
-                  <div><p>please enter a variant</p></div>
-                  :
-                  <div></div>
-                }
               </div>
           }
         </div>
@@ -1902,19 +2717,26 @@ class AddVariants extends Component {
     return (
       <div className="container">
         <h3 className='pageheader'>Add Variants to the Database</h3>
-        <form>
-          <VirusSelectField changeSelection={this.onChangeSelectionVirus.bind(this)}></VirusSelectField>
-          <GeneSelectField changeSelection={this.onChangeSelectionGene.bind(this)}></GeneSelectField>
-          <label>
+        <div style={{ display: "flex", flexDirection: "flex-row", justifyContent: "space-around" }}>
+          <form style={{ flexGrow: "1", marginRight: "5vw" }}>
+            <div>
+              <VirusSelectField changeSelection={this.onChangeSelectionVirus.bind(this)}></VirusSelectField>
+              <GeneSelectField changeSelection={this.onChangeSelectionGene.bind(this)}></GeneSelectField>
+            </div>
+          </form>
+          <form style={{ flexGrow: "1" }}>
+
+            <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
             <Input label="Enter your variant" type="variant" className="form-control"
               name="variant"
               value={this.state.variant}
               onChange={(event) => { this.handleChange(event) }}
             />
-          </label>
-          <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
+          </form>
+        </div>
+        <div style={{ display: "flex", flexDirection: "flex-row", flexWrap: "wrap" }}>
           {this.state.selecteddrugs.map(element => {
-            return <div key={element}>
+            return <div key={element} style={{ marginRight: "1rem" }}>
               <label>
                 <Input label={"Enter " + element.charAt(0).toUpperCase() + element.slice(1) + " Fold"}
                   type='variant' className="form-control"
@@ -1925,18 +2747,25 @@ class AddVariants extends Component {
               </label>
             </div>
           })}
-          <label>
-            <Input label="Enter PMID reference" type="reference" className="form-control"
-              name="reference"
-              value={this.state.reference}
-              onChange={(event) => { this.handleChange(event) }}
-            />
-          </label>
-          <Input label="Enter any additional comments" type="comments" className="form-control"
-            name="comments"
-            value={this.state.comments}
-            onChange={(event) => { this.handleChange(event) }}
-          />
+
+        </div>
+        <form>
+          <div style={{ display: "flex", flexDirection: "flex-row", alignContent: "space-between" }}>
+            <div style={{ alignSelf: "flex-start", marginRight: "5vw" }}>
+              <Input label="Enter PMID reference" type="reference" className="form-control"
+                name="reference"
+                value={this.state.reference}
+                onChange={(event) => { this.handleChange(event) }}
+              />
+            </div>
+            <div style={{ alignSelf: "flex-end", width: "60vw" }}>
+              <Input label="Enter any additional comments" type="comments" className="form-control"
+                name="comments"
+                value={this.state.comments}
+                onChange={(event) => { this.handleChange(event) }}
+              />
+            </div>
+          </div>
           <div className="form-group">
             <button type='button' className="btn btn-primary mr-2" onClick={() => this.handleVariant()}>
               Submit Variant
@@ -1949,7 +2778,7 @@ class AddVariants extends Component {
             <div className="alert alert-success" id='loggedin'><h5>Logged in as {this.state.user.email}</h5></div>
           }
         </form>
-      </div >
+      </div>
     )
   }
 }
@@ -2263,6 +3092,6 @@ var VirusSelectField = createClass({
     );
   }
 });
-
+//export default withAuthenticator(App, true);
 export default withRouter(App);
 

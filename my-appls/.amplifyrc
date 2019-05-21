@@ -1,0 +1,14 @@
+{
+    "providers": {
+        "awscloudformation": {
+            "AuthRoleName": "myappls-20181212170230-authRole",
+            "UnauthRoleArn": "arn:aws:iam::497093283193:role/myappls-20181212170230-unauthRole",
+            "AuthRoleArn": "arn:aws:iam::497093283193:role/myappls-20181212170230-authRole",
+            "Region": "us-west-2",
+            "DeploymentBucketName": "myappls-20181212170230-deployment",
+            "UnauthRoleName": "myappls-20181212170230-unauthRole",
+            "StackName": "myappls-20181212170230",
+            "StackId": "arn:aws:cloudformation:us-west-2:497093283193:stack/myappls-20181212170230/c48d1fb0-fe72-11e8-9925-06dcf5c4ac1e"
+        }
+    }
+}

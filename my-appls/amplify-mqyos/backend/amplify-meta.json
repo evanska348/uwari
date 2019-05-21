@@ -1,0 +1,86 @@
+{
+	"providers": {
+		"awscloudformation": {
+			"AuthRoleName": "myappls-20181212170230-authRole",
+			"UnauthRoleArn": "arn:aws:iam::497093283193:role/myappls-20181212170230-unauthRole",
+			"AuthRoleArn": "arn:aws:iam::497093283193:role/myappls-20181212170230-authRole",
+			"Region": "us-west-2",
+			"DeploymentBucketName": "myappls-20181212170230-deployment",
+			"UnauthRoleName": "myappls-20181212170230-unauthRole",
+			"StackName": "myappls-20181212170230",
+			"StackId": "arn:aws:cloudformation:us-west-2:497093283193:stack/myappls-20181212170230/c48d1fb0-fe72-11e8-9925-06dcf5c4ac1e"
+		}
+	},
+	"auth": {
+		"cognito23bd2504": {
+			"service": "Cognito",
+			"providerPlugin": "awscloudformation",
+			"providerMetadata": {
+				"s3TemplateURL": "https://s3.amazonaws.com/myappls-20181212170230-deployment/amplify-cfn-templates/auth/cognito23bd2504-cloudformation-template.yml",
+				"logicalId": "authcognito23bd2504"
+			},
+			"lastPushTimeStamp": "2018-12-17T22:48:17.160Z",
+			"output": {
+				"AppClientSecret": "51882p3e188qrf9lmgtsuv1bbv019ueumoasd45il0hcuavab1h",
+				"UserPoolId": "us-west-2_au1beU6mP",
+				"AppClientIDWeb": "481276die6qdkarhf2imi5bk2j",
+				"AppClientID": "m9uj2ibqff3rkk0qdqvgu0ije",
+				"IdentityPoolId": "us-west-2:d843b85c-11d0-4275-ab33-bc3cb81d23c1",
+				"IdentityPoolName": "cognito23bd2504_identitypool_23bd2504",
+				"UserPoolName": "cognito23bd2504_userpool_23bd2504"
+			},
+			"lastPushDirHash": "DY3zGwQpL8dDK0dlEYqtI0ds6yc="
+		}
+	},
+	"storage": {
+		"uwaris3bucket": {
+			"service": "S3",
+			"providerPlugin": "awscloudformation",
+			"providerMetadata": {
+				"s3TemplateURL": "https://s3.amazonaws.com/myappls-20181212170230-deployment/amplify-cfn-templates/storage/s3-cloudformation-template.json",
+				"logicalId": "storageuwaris3bucket"
+			},
+			"lastPushTimeStamp": "2018-12-17T22:48:17.161Z",
+			"output": {
+				"BucketName": "uwaris3bucket",
+				"Region": "us-west-2"
+			},
+			"lastPushDirHash": "57eE61ZtEceynn7pl78VmLRGqKY="
+		}
+	},
+	"hosting": {
+		"S3AndCloudFront": {
+			"service": "S3AndCloudFront",
+			"providerPlugin": "awscloudformation",
+			"providerMetadata": {
+				"s3TemplateURL": "https://s3.amazonaws.com/myappls-20181212170230-deployment/amplify-cfn-templates/hosting/template.json",
+				"logicalId": "hostingS3AndCloudFront"
+			},
+			"lastPushTimeStamp": "2018-12-17T22:48:17.163Z",
+			"output": {
+				"S3BucketSecureURL": "https://uwari-20181216120843--hostingbucket.s3.amazonaws.com",
+				"WebsiteURL": "http://uwari-20181216120843--hostingbucket.s3-website-us-west-2.amazonaws.com",
+				"Region": "us-west-2",
+				"HostingBucketName": "uwari-20181216120843--hostingbucket"
+			},
+			"lastPushDirHash": "9PVjfX4zaAGMK0TtJvgukBbOmzo="
+		}
+	},
+	"analytics": {
+		"uwari": {
+			"service": "Pinpoint",
+			"providerPlugin": "awscloudformation",
+			"providerMetadata": {
+				"s3TemplateURL": "https://s3.amazonaws.com/myappls-20181212170230-deployment/amplify-cfn-templates/analytics/pinpoint-cloudformation-template.json",
+				"logicalId": "analyticsuwari"
+			},
+			"lastPushTimeStamp": "2018-12-17T22:48:17.165Z",
+			"output": {
+				"appName": "uwari",
+				"Region": "us-east-1",
+				"Id": "cf5ec029620548c8bfc954d0d8192b5c"
+			},
+			"lastPushDirHash": "44IEyfXWYr1v67bZaJvacvdzaUE="
+		}
+	}
+}

@@ -1,0 +1,13 @@
+{
+	"bucketName": "uwaris3bucket",
+	"authPolicyName": "s3_amplify_4b4adad1",
+	"unauthPolicyName": "s3_amplify_4b4adad1",
+	"authRoleName": {
+		"Ref": "AuthRoleName"
+	},
+	"unauthRoleName": {
+		"Ref": "UnauthRoleName"
+	},
+	"authPermissions": "rw",
+	"unauthPermissions": "rw"
+}

@@ -1,0 +1,20 @@
+{
+    "appName": "uwari",
+    "roleName": "pinpointLambdaRole3d24015f",
+    "cloudWatchPolicyName": "cloudWatchPolicy3d24015f",
+    "pinpointPolicyName": "pinpointPolicy3d24015f",
+    "authPolicyName": "pinpoint_amplify_3d24015f",
+    "unauthPolicyName": "pinpoint_amplify_3d24015f",
+    "authRoleName": {
+        "Ref": "AuthRoleName"
+    },
+    "unauthRoleName": {
+        "Ref": "UnauthRoleName"
+    },
+    "authRoleArn": {
+        "Fn::GetAtt": [
+            "AuthRole",
+            "Arn"
+        ]
+    }
+}
