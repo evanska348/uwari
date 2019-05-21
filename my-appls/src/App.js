@@ -33,34 +33,7 @@ Amplify.configure(aws_exports);
 // import aws_exports from './aws-exports';
 // Amplify.configure(aws_exports);
 // import { withAuthenticator, S3Album } from 'aws-amplify-react';
-// ssh evanzhao@vergil.u.washington.edu
 
-//user evanzhao
-//access AKIAIZQTUU4ARPFOXUOA
-//secret 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
-
-// Amplify.configure(
-//   {
-//   Auth: {
-//     identityPoolId: 'us-east-1:9de0bf5b-a595-4262-a048-c69649e11ca5', //REQUIRED - Amazon Cognito Identity Pool ID
-//     region: 'us-east-1', // REQUIRED - Amazon Cognito Region
-//     // userPoolId: 'XX-XXXX-X_abcd1234', //OPTIONAL - Amazon Cognito User Pool ID
-//     //  userPoolWebClientId: 'XX-XXXX-X_abcd1234', //OPTIONAL - Amazon Cognito Web Client ID
-//   },
-//   Storage: {
-//     bucket: 'arn:aws:s3:::uwari-20181216120843--hostingbucket/*', //REQUIRED -  Amazon S3 bucket
-//     region: 'us-west-2', //OPTIONAL -  Amazon service region
-//   }
-// }
-// );
-
-// Storage.configure({
-//   bucket: 'uwari-20181216120843--hostingbucket', //Your bucket ARN;
-//   region: 'us-west-2',
-//   identityPoolId: 'us-east-1:9de0bf5b-a595-4262-a048-c69649e11ca5'
-// });
-
-// AWS.config.credentials = Auth.essentialCredentials(await Auth.currentCredentials());
 
 var config = {
   apiKey: "AIzaSyBGflsX38vQ4SVYcsPDXySUmIWZFnbIwao",
@@ -70,25 +43,6 @@ var config = {
   storageBucket: "cmvdb-555bc.appspot.com",
   messagingSenderId: "869787015915"
 };
-
-//abi ab1 fastq fasta
-//agrening@uw.edu
-//keithjerome123!
-//object in website
-//upload s3 bucket
-//lambda trigger aws batch on what is in the bucket - fetch and run
-//docker image ported to aws batch
-//website would listening for s3 bucket return
-
-
-
-const s3config = {
-  bucketName: 'ari-input',
-  dirName: 'input', /* optional */
-  region: 'us-east-1',
-  accessKeyId: 'AKIAJTA5QUHLBAHKYXZA',
-  secretAccessKey: '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',
-}
 
 firebase.initializeApp(config);
 const firestore = firebase.firestore();
@@ -328,80 +282,6 @@ class App extends Component {
     );
   }
 }
-
-{/* <Navbar color="teal" dark expand="md" scrolling>
-<NavbarBrand href="/WelcomePage">
-  <strong>UW Antiviral Resistance Interpretation</strong>
-</NavbarBrand>
-{!this.state.isWideEnough && <NavbarToggler onClick={this.toggleCollapse('navbarCollapse1')} />}
-<MDBCollapse id="navbarCollapse1" isOpen={this.state.collapseID} navbar>
-  <NavbarNav left>
-    <NavItem>
-      <NavLink exact className="nav-link waves-effect waves-light" aria-haspopup="true" aria-expanded="false" to="/WelcomePage">Home</NavLink>
-    </NavItem>
-    <NavItem>
-      <NavLink className="nav-link waves-effect waves-light" to="/CMVdb">CMVdb</NavLink>
-    </NavItem>
-    <NavItem>
-      <NavLink className="nav-link waves-effect waves-light" to="/HSV1db">HSV-1db</NavLink>
-    </NavItem>
-    <NavItem>
-      <NavLink className="nav-link waves-effect waves-light" to="/HSV2db">HSV-2db</NavLink>
-    </NavItem>
-    <NavItem>
-      <Dropdown>
-        <DropdownToggle nav caret>File Input</DropdownToggle>
-        <DropdownMenu>
-          <DropdownItem>
-            <NavLink className="nav-link waves-effect waves-light dropdown" to="/CMVFileInput">CMV</NavLink>
-          </DropdownItem>
-          <DropdownItem>
-            <NavLink className="nav-link waves-effect waves-light dropdown" to="/HSV1FileInput">HSV-1</NavLink>
-          </DropdownItem>
-          <DropdownItem>
-            <NavLink className="nav-link waves-effect waves-light dropdown" to="/HSV2FileInput">HSV-2</NavLink>
-          </DropdownItem>
-        </DropdownMenu>
-      </Dropdown>
-    </NavItem>
-  </NavbarNav>
-  <NavbarNav right>
-    <NavItem>
-      <NavLink className="nav-link waves-effect waves-light" to="/pending-files">File Library</NavLink>
-    </NavItem>
-    <NavItem>
-      <Dropdown toggle={this.toggle}>
-        <DropdownToggle nav caret><i className="fa fa-user" aria-hidden="true"></i></DropdownToggle>
-        <DropdownMenu right>
-          {this.state.user === '' ?
-            <div>
-              <DropdownItem>
-                <NavLink className="nav-link waves-effect waves-light" to="#" disabled>Login to add Variants</NavLink>
-              </DropdownItem >
-  <DropdownItem>
-    <NavLink className="nav-link waves-effect waves-light" to="/login">Login</NavLink>
-  </DropdownItem>
-            </div >
-            :
-<div>
-  <DropdownItem>
-    <NavLink className="nav-link waves-effect waves-light" to="/AddVariants">Add Variants</NavLink>
-  </DropdownItem>
-  <DropdownItem>
-    <NavLink className="nav-link waves-effect waves-light" to="/Saved-Sequences">Saved Sequences</NavLink>
-  </DropdownItem>
-  <DropdownItem>
-    <NavLink className="logoutButton" onClick={this.handleLogout} to="/login">Logout</NavLink>
-  </DropdownItem>
-  <button type='button' className="btn btn-danger btn-sm" onClick={this.handleLogout}>Logout</button>
-</div>
-          }
-        </DropdownMenu >
-      </Dropdown >
-    </NavItem >
-  </NavbarNav >
-</MDBCollapse >
-</Navbar > */}
 
 class WelcomePage extends Component {
   render() {
