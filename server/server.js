@@ -21,15 +21,8 @@ app.use(function (req, res, next) {
   }
 });
 
-// configure the keys for accessing AWS
-AWS.config.update({
-  accessKeyId: "AKIAIZQTUU4ARPFOXUOA",
-  secretAccessKey: "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"
-});
-
-//user evanzhao
-//access AKIAIZQTUU4ARPFOXUOA
-//secret 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
+AWS.config.update({ region: 'us-west-2' });
+AWS.config.credentials = new AWS.EC2MetadataCredentials();
 
 // configure AWS to work with promises
 AWS.config.setPromisesDependency(bluebird);
@@ -46,8 +39,122 @@ const uploadFile = (buffer, name) => {
     ContentType: ".ab1",
     Key: `${name}.ab1`
   };
-  return s3.upload(params).promise();
+  s3.putObject(params, function (error, data) {
+    if (error) {
+      return error;
+    } else {
+      console.log('Successfully uploaded package.');
+      return data;
+    }
+  });
 };
+
+const downloadFile = (name) => {
+  let response = s3.getObject(
+    { Bucket: "uwari-20181216120843--hostingbucket", Key: name },
+    function (error, data) {
+      if (error === null) { //if (error) {
+        sequence = data.Body.toString('utf8');
+        return data.Body.toString('utf8');
+      } else {
+        return error;
+      }
+    });
+  console.log('loading')
+}
+
+// Define POST route
+app.post('/test-upload', (request, response) => {
+  const form = new multiparty.Form();
+  console.log('hi')
+  form.parse(request, async (error, fields, files) => {
+    if (error) throw new Error(error);
+    try {
+      const path = files.file[0].path;
+      const buffer = fs.readFileSync(path);
+      const timestamp = Date.now().toString();
+      const rand = Math.random().toString();
+      const type = fields.string[0];
+      const hash = crypto.createHash('sha1').update(timestamp + rand).digest('hex');
+      const fileName = `${hash}--${type}--`;
+      console.log(fileName)
+      const data = await uploadFile(buffer, fileName);
+      const download = await downloadFile(`${fileName}.txt`);
+      while (!sequence) {
+        await delay(2000);
+        downloadFile(`${fileName}.txt`);
+      }
+      console.log(sequence);
+      var params = {
+        Bucket: "uwari-20181216120843--hostingbucket",
+        Delete: {
+          Objects: [
+            {
+              Key: `${fileName}.ab1`
+            },
+            { Key: `${fileName}.txt` }
+          ],
+          Quiet: false
+        }
+      };
+      s3.deleteObjects(params, function (err, data) {
+        if (err) console.log(err, err.stack);
+        else console.log(data);
+      })
+      let dat = sequence;
+      sequence = '';
+      return response.status(200).send(dat);
+    } catch (error) {
+      return response.status(400).send(error);
+    }
+  });
+});
+
+function delay(n) {
+  n = n || 2000;
+  return new Promise(done => {
+    setTimeout(() => {
+      done();
+    }, n)
+  })
+}
+
+// app.listen(process.env.PORT || 3000);
+// console.log('Server up and running...');
+app.listen(3000, () => console.log('Server running on port 3000'))
+
+
+
+
+// var getObject = function(keyFile) {
+//   return new Promise(function(success, reject) {
+//       s3.getObject(
+//           { Bucket: "uwari-20181216120843--hostingbucket", Key: keyFile },
+//           function (error, data) {
+//               if(error) {
+//                   getObject(keyfile);
+//               } else {
+//                   success(data);
+//               }
+//           }
+//       );
+//   });
+// }
+
+// var promises = [];
+// var fileContent= '';
+
+//   promises = getObject(fileName);
+
+// Promise.all(promises)
+// .then(function(results) {
+//       fileContent = data.Body.toString();
+//   // continue your process here
+// })
+// .catch(function(err) {
+//   alert(err);
+// });
+
 
 // const downloadFile = (name) => {
 //   let response = s3.getObject(
@@ -66,22 +173,6 @@ const uploadFile = (buffer, name) => {
 //   console.log('hi1')
 //   // return response;
 // }
-
-const downloadFile = (name) => {
-  let response = s3.getObject(
-    { Bucket: "uwari-20181216120843--hostingbucket", Key: name, },
-    function (error, data) {
-      if (error === null) {
-        sequence = data.Body.toString('utf8');
-        // console.log(data.Body.toString('utf8'));
-        return data.Body.toString('utf8');
-      } else {
-        return error;
-      }
-    });
-  console.log('hi1')
-  // return response;
-}
 
 // (function repeat() {{
 // const download = await downloadFile(`${fileName}.txt`);
@@ -139,95 +230,3 @@ const downloadFile = (name) => {
 //     }
 //   }
 // }
-
-// Define POST route
-app.post('/test-upload', (request, response) => {
-  const form = new multiparty.Form();
-  console.log('hi')
-  form.parse(request, async (error, fields, files) => {
-    if (error) throw new Error(error);
-    try {
-      const path = files.file[0].path;
-      const buffer = fs.readFileSync(path);
-      const timestamp = Date.now().toString();
-      const rand = Math.random().toString();
-      const type = fields.string[0];
-      const hash = crypto.createHash('sha1').update(timestamp + rand).digest('hex');
-      const fileName = `${hash}--${type}--`;
-      console.log(fileName)
-      const data = await uploadFile(buffer, fileName);
-      const download = await downloadFile(`${fileName}.txt`);
-      while (!sequence) {
-        await delay(500);
-        downloadFile(`${fileName}.txt`);
-        console.log("hey")
-      }
-      console.log(sequence);
-      var params = {
-        Bucket: "uwari-20181216120843--hostingbucket",
-        Delete: {
-          Objects: [
-            {
-              Key: `${fileName}.ab1`
-            },
-            { Key: `${fileName}.txt` }
-          ],
-          Quiet: false
-        }
-      };
-      s3.deleteObjects(params, function (err, data) {
-        if (err) console.log(err, err.stack);
-        else console.log(data);
-      })
-      let dat = sequence;
-      sequence = '';
-      return response.status(200).send(dat);
-    } catch (error) {
-      return response.status(400).send(error);
-    }
-  });
-});
-
-function delay(n) {
-  n = n || 2000;
-  return new Promise(done => {
-    setTimeout(() => {
-      done();
-    }, n)
-  })
-}
-
-app.listen(process.env.PORT || 9000);
-console.log('Server up and running...');
-
-
-
-
-// var getObject = function(keyFile) {
-//   return new Promise(function(success, reject) {
-//       s3.getObject(
-//           { Bucket: "uwari-20181216120843--hostingbucket", Key: keyFile },
-//           function (error, data) {
-//               if(error) {
-//                   getObject(keyfile);
-//               } else {
-//                   success(data);
-//               }
-//           }
-//       );
-//   });
-// }
-
-// var promises = [];
-// var fileContent= '';
-
-//   promises = getObject(fileName);
-
-// Promise.all(promises)
-// .then(function(results) {
-//       fileContent = data.Body.toString();
-//   // continue your process here
-// })
-// .catch(function(err) {
-//   alert(err);
-// });

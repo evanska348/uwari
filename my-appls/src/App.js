@@ -28,7 +28,7 @@ import axios from 'axios';
 import Tooltip from "react-simple-tooltip"
 import { css } from "styled-components"
 
-Amplify.configure(aws_exports);
+// Amplify.configure(aws_exports);
 // import Amplify, { Storage } from 'aws-amplify';
 // import aws_exports from './aws-exports';
 // Amplify.configure(aws_exports);
@@ -513,134 +513,23 @@ class FileCardIncomplete extends Component {
 }
 
 class HSV2FileInput extends Component {
-
   constructor() {
     super();
-    this.state = {
-      submitClicked: false,
-    }
-  }
-
-  handleSubmit() {
-    this.setState({ submitClicked: !this.state.submitClicked })
-  }
-
-  render() {
-    return (
-      <div className="container">
-        {
-          this.state.submitClicked ?
-            <div>
-              <div>
-                <h2 className="pageheader">Results:</h2>
-                <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
-              </div>
-            </div>
-            :
-            <div>
-              <h2 className="pageheader">HSV-2 File Input</h2>
-              <input type="file"></input>
-              <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary  fileSubmit" type="submit">Analyze</button>
-            </div>
-        }
-      </div>
-    )
-  }
-}
-
-class HSV1FileInput extends Component {
-
-  constructor() {
-    super();
-    this.updateInput54 = this.updateInput54.bind(this);
-    this.updateInput56 = this.updateInput56.bind(this);
+    this.updateInput23 = this.updateInput23.bind(this);
+    this.updateInput30 = this.updateInput30.bind(this);
     this.state = {
       file: null,
       submitClicked: false,
       input: '',
       poly: [],
-      term: [],
+      tk: [],
       selecteddrugs: [],
       drugs: [],
-      selected54poly: [],
-      selected56term: [],
+      selectedPolymerase: [],
+      selectedThymidine: [],
       loaded: false
     }
   }
-
-  // componentWillMount() {
-  //   var drugarray = [];
-  //   var drugobj = [];
-  //   db
-  //     .collection('HSVdrug')
-  //     .get()
-  //     .then(snapshot => {
-  //       snapshot
-  //         .docs
-  //         .forEach(doc => {
-  //           var object = JSON.parse(doc._document.data)
-  //           var keys = Object.keys(object);
-  //           var i;
-  //           for (i = 0; i < keys.length; i++) {
-  //             drugarray.push(keys[i])
-  //             drugobj.push({
-  //               label: keys[i],
-  //               value: keys[i]
-  //             })
-  //           }
-  //           this.setState({ drugs: drugobj })
-  //           this.setState({ selecteddrugs: drugarray })
-  //           this.setState({
-  //             loaded: true
-  //           });
-  //         });
-  //     });
-  //   var epistasis = []
-  //   db
-  //     .collection('epistaticvariants')
-  //     .get()
-  //     .then(snapshot => {
-  //       snapshot
-  //         .docs
-  //         .forEach(doc => {
-  //           var object = doc.data()
-  //           epistasis.push(object)
-  //           this.setState({ epistasis: epistasis });
-  //         });
-  //     });
-  //     var HSV1ThymidineKinase = []
-  //     db
-  //       .collection('HSV1resistance')
-  //       .doc("HSV1resistance")
-  //       .collection("HSV1ThymidineKinase")
-  //       .get()
-  //       .then(snapshot => {
-  //         snapshot
-  //           .docs
-  //           .forEach(doc => {
-  //             var object = doc.data().Variant
-  //             HSV1ThymidineKinase.push({ label: object, value: object })
-  //             this.setState({ poly: HSV1ThymidineKinase })
-  //           });
-  //       });
-
-  //     var HSV1Polymerase = []
-  //     db
-  //       .collection('HSV1resistance')
-  //       .doc("HSV1resistance")
-  //       .collection("HSV1Polymerase")
-  //       .get()
-  //       .then(snapshot => {
-  //         snapshot
-  //           .docs
-  //           .forEach(doc => {
-  //             var object = doc.data().Variant
-  //             HSV1Polymerase.push({ label: object, value: object })
-  //             this.setState({ term: HSV1Polymerase })
-  //           });
-  //       });
-  // }
 
   componentWillMount() {
     var drugarray = [];
@@ -670,38 +559,42 @@ class HSV1FileInput extends Component {
             });
           });
       });
-    var ul54polymerasevariants = []
+    var HSV2ThymidineKinase = [];
     db
-      .collection('HSV1resistance')
+      .collection('HSV2resistance')
+      .doc("HSV2resistance")
+      .collection("HSV2ThymidineKinase")
       .get()
       .then(snapshot => {
         snapshot
           .docs
           .forEach(doc => {
             var object = doc.data().Variant
-            ul54polymerasevariants.push({ label: object, value: object })
-            this.setState({ poly: ul54polymerasevariants })
+            HSV2ThymidineKinase.push({ label: object, value: object })
+            this.setState({ poly: HSV2ThymidineKinase })
           });
       });
 
-    var UL56terminase = []
+    var HSV2Polymerase = [];
     db
-      .collection('ul56terminasevariants')
+      .collection('HSV2resistance')
+      .doc("HSV2resistance")
+      .collection("HSV2Polymerase")
       .get()
       .then(snapshot => {
         snapshot
           .docs
           .forEach(doc => {
             var object = doc.data().Variant
-            UL56terminase.push({ label: object, value: object })
-            this.setState({ term: UL56terminase })
+            HSV2Polymerase.push({ label: object, value: object })
+            this.setState({ tk: HSV2Polymerase })
           });
       });
   }
 
   handleSubmit() {
-    if (this.state.selected54poly === [] &&
-      this.state.selected56term === []) {
+    if (this.state.selectedPolymerase === [] &&
+      this.state.selectedThymidine === []) {
       this.setState({ empty: true });
       console.log("YOOOO")
     } else {
@@ -713,30 +606,30 @@ class HSV1FileInput extends Component {
       if (this.state.submitClicked === true) {
         this.setState({
           selecteddrugs: drugarray,
-          selected54poly: [],
-          selected56term: [],
+          selectedPolymerase: [],
+          selectedThymidine: [],
         })
       }
       this.setState({ submitClicked: !this.state.submitClicked })
     }
   }
 
-  updateInput54(event) {
+  updateInput23(event) {
     this.setState({ input: event.target.value })
-    this.setState({ txt97: event.target.value })
-    let termstate = [];
+    this.setState({ txt23: event.target.value })
+    let tkstate = [];
     let fasta_sequence = event.target.value;
-    for (let i = 0; i < this.state.term.length; i++) {
-      let variant = this.state.term[i].value;
+    for (let i = 0; i < this.state.tk.length; i++) {
+      let variant = this.state.tk[i].value;
       if (variant.match(/\d+/g) !== null) {
         let loc = variant.match(/\d+/g).map(Number)[0];
         if (fasta_sequence.charAt(loc - 1) === variant[variant.length - 1]) {
-          termstate.push(variant)
+          tkstate.push(variant)
         }
       }
     }
     if (fasta_sequence.length > 30) {
-      toast.success("UL97 sequence alignment finished!", {
+      toast.success("UL23 sequence alignment finished!", {
         toastId: 13,
         position: "top-right",
         autoClose: 5000,
@@ -747,8 +640,10 @@ class HSV1FileInput extends Component {
       });
     }
     let data = [];
-    for (let i = 0; i < termstate.length; i++) {
-      let docRef = db.collection("ul97phosphotransferasevariants").doc(termstate[i]);
+    for (let i = 0; i < tkstate.length; i++) {
+      let docRef = db.collection('HSV2resistance')
+        .doc("HSV2resistance")
+        .collection("HSV2ThymidineKinase").doc(tkstate[i]);
       docRef.get().then(function (doc) {
         if (doc.exists) {
           data.push(doc.data());
@@ -757,15 +652,15 @@ class HSV1FileInput extends Component {
         console.log("Error getting document:", error);
       });
     }
-    this.setState({ selected97phos: data })
+    this.setState({ selectedThymidine: data })
   }
 
-  updateInput56(event) {
+  updateInput30(event) {
     this.setState({ input: event.target.value })
     let polstate = [];
     let fasta_sequence = event.target.value;
-    for (let i = 0; i < this.state.pol.length; i++) {
-      let variant = this.state.pol[i].value;
+    for (let i = 0; i < this.state.poly.length; i++) {
+      let variant = this.state.poly[i].value;
       if (variant.match(/\d+/g) !== null) {
         let loc = variant.match(/\d+/g).map(Number)[0];
         if (fasta_sequence.charAt(loc - 1) === variant[variant.length - 1]) {
@@ -786,7 +681,9 @@ class HSV1FileInput extends Component {
     }
     let data = [];
     for (let i = 0; i < polstate.length; i++) {
-      let docRef = db.collection("ul56terminasevariants").doc(polstate[i]);
+      let docRef = db.collection('HSV2resistance')
+        .doc("HSV2resistance")
+        .collection("HSV2Polymerase").doc(polstate[i]);
       docRef.get().then(function (doc) {
         if (doc.exists) {
           data.push(doc.data());
@@ -795,7 +692,7 @@ class HSV1FileInput extends Component {
         console.log("Error getting document:", error);
       });
     }
-    this.setState({ selected56term: data })
+    this.setState({ selectedPolymerase: data })
   }
 
 
@@ -809,21 +706,62 @@ class HSV1FileInput extends Component {
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
     }
-    axios.post(`http://localhost:9000/test-upload`, formData, {
-      headers: headers
-    }).then(response => {
-      console.log(response.data)
-      if (gene === 'hsv1tk') {
-        this.updateInput54({ target: { value: response.data } });
-        this.setState({ txt54: response.data });
-      } else if (gene === 'hsv1pol') {
-        this.updateInput56({ target: { value: response.data } });
-        this.setState({ txt56: response.data });
+    if (gene === 'hsv2tk') {
+      this.setState({ txt23: 'loading...' });
+    } else if (gene === 'hsv2pol') {
+      this.setState({ txt30: 'loading...' });
+    }
+    let extension = event.target.files[0].name.match(/\.[0-9a-z]+$/i)[0];
+    console.log(extension)
+    if (extension === '.fasta' || extension === '.fa') {
+      let reader = new FileReader();
+      reader.onload = function (e) {
+        let result = reader.result;
+        console.log(result.toString())
+        // break the textblock into an array of lines
+        var lines = result.split('\n');
+        lines.splice(0, 1);
+        var newtext = lines.join('\n');
+        result = newtext.replace(/\n|\r/g, "");
+        if (gene === 'hsv2tk') {
+          this.setState({ txt23: result });
+        } else if (gene === 'hsv2pol') {
+          this.setState({ txt30: result });
+        }
+      }.bind(this)
+      reader.readAsText(event.target.files[0]);
+    } else if (extension === '.ab1' || extension === '.abi') {
+      axios.post(`http://ec2-52-41-160-246.us-west-2.compute.amazonaws.com:3000/test-upload`, formData, {
+        headers: headers
+      }).then(response => {
+        console.log(response.data)
+        if (gene === 'hsv2tk') {
+          this.updateInput23({ target: { value: response.data } });
+          this.setState({ txt23: response.data });
+        } else if (gene === 'hsv2pol') {
+          this.updateInput30({ target: { value: response.data } });
+          this.setState({ txt30: response.data });
+        }
+      }).catch(error => {
+        console.log(error)
+      });
+      console.log("function start")
+    } else {
+      toast.error("File extension must be .ab1 .abi .fasta .fa", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      if (gene === 'hsv2tk') {
+        this.setState({ txt23: 'Improper File Type' });
+      } else if (gene === 'hsv2pol') {
+        this.setState({ txt30: 'Improper File Type' });
       }
-    }).catch(error => {
-      console.log(error)
-    });
-    console.log("done")
+    }
   }
 
   onChangeSelectionDrug(value) {
@@ -831,6 +769,14 @@ class HSV1FileInput extends Component {
     this.setState({
       selecteddrugs: drugsarr
     });
+  }
+
+  clearTextArea = gene => {
+    if (gene === 'hsv2tk') {
+      this.setState({ txt23: '' });
+    } else if (gene === 'hsv2pol') {
+      this.setState({ txt30: '' });
+    }
   }
 
 
@@ -844,7 +790,397 @@ class HSV1FileInput extends Component {
               <div>
                 <div>
                   <p>{this.state.mutation_list}</p>
-                  <Results selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                  {/* <Results selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results> */}
+                  <HSVResults selecteddrugs={this.state.selecteddrugs} epistasis={[]} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
+                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                </div>
+              </div>
+              :
+              <div>
+                <h2 className="pageheader"> HSV-2 File Input</h2>
+                <p className='druglabel'>Drug Selection</p>
+                <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
+
+                <h3 style={{ display: 'inline-block' }} className='FileInput-headers'><strong>UL23 - Thymidine Kinase</strong></h3>
+                <Tooltip
+                  style={{ display: 'inline-block' }}
+                  multiline='true'
+                  content={descriptionTool}
+                  customCss={css`white-space: nowrap;`}>
+                  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
+                </Tooltip>
+                <div className="input-group">
+                  <div className="custom-file">
+                    <input
+                      type="file"
+                      className="custom-file-input"
+                      id="inputGroupFile01"
+                      aria-describedby="inputGroupFile01"
+                      label='upload file'
+                      onChange={this.submitFile('hsv2tk')}
+                    />
+                    <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
+                      Choose file
+                    </label>
+                  </div>
+                </div>
+                {/* <input label='upload file' type='file' onChange={this.submitFile('hsv1tk')} /> */}
+                {/* <textarea value={this.state.txt54} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea> */}
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => this.clearTextArea('hsv2tk')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
+                    <i className="fa fa-close"></i>
+                  </button>
+                  <textarea value={this.state.txt23} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea>
+                </div>
+
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL56</button>
+
+                <h3 className='FileInput-headers' style={{ display: 'inline-block' }}><strong>UL30 - DNA Polymerase</strong></h3>
+                <Tooltip
+                  style={{ display: 'inline-block' }}
+                  multiline='true'
+                  content={descriptionTool}
+                  customCss={css`white-space: nowrap;`}>
+                  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
+                </Tooltip>
+                <div className="input-group">
+                  <div className="custom-file">
+                    <input
+                      type="file"
+                      className="custom-file-input"
+                      id="inputGroupFile01"
+                      aria-describedby="inputGroupFile01"
+                      label='upload file'
+                      onChange={this.submitFile('hsv2pol')}
+                    />
+                    <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
+                      Choose file
+                    </label>
+                  </div>
+                </div>
+                {/* <input label='upload file' type='file' onChange={this.submitFile('hsv1pol')} /> */}
+                {/* <textarea value={this.state.txt56} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea> */}
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => this.clearTextArea('hsv2pol')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
+                    <i className="fa fa-close"></i>
+                  </button>
+                  <textarea value={this.state.txt30} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
+                </div>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL97</button>
+                <ToastContainer />
+              </div>
+          }
+        </div>
+      )
+    } else {
+      return (
+        <div className="loaderContainer">
+          <div className="loader"></div>
+        </div>
+      );
+    }
+  }
+}
+
+class HSV1FileInput extends Component {
+
+  constructor() {
+    super();
+    this.updateInput23 = this.updateInput23.bind(this);
+    this.updateInput30 = this.updateInput30.bind(this);
+    this.state = {
+      file: null,
+      submitClicked: false,
+      input: '',
+      poly: [],
+      tk: [],
+      selecteddrugs: [],
+      drugs: [],
+      selectedPolymerase: [],
+      selectedThymidine: [],
+      loaded: false
+    }
+  }
+
+  // componentWillMount() {
+  //   var epistasis = []
+  //   db
+  //     .collection('epistaticvariants')
+  //     .get()
+  //     .then(snapshot => {
+  //       snapshot
+  //         .docs
+  //         .forEach(doc => {
+  //           var object = doc.data()
+  //           epistasis.push(object)
+  //           this.setState({ epistasis: epistasis });
+  //         });
+  //     });
+
+
+
+  componentWillMount() {
+    var drugarray = [];
+    var drugobj = [];
+    db
+      .collection('HSVdrug')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            // var object = JSON.parse(doc._document.data)
+            var object = doc.data();
+            var keys = Object.keys(object);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+              drugarray.push(keys[i])
+              drugobj.push({
+                label: keys[i],
+                value: keys[i]
+              })
+            }
+            this.setState({ drugs: drugobj })
+            this.setState({ selecteddrugs: drugarray })
+            this.setState({
+              loaded: true
+            });
+          });
+      });
+
+    var HSV1ThymidineKinase = []
+    db
+      .collection('HSV1resistance')
+      .doc("HSV1resistance")
+      .collection("HSV1ThymidineKinase")
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            HSV1ThymidineKinase.push({ label: object, value: object })
+            this.setState({ poly: HSV1ThymidineKinase })
+          });
+      });
+
+    var HSV1Polymerase = []
+    db
+      .collection('HSV1resistance')
+      .doc("HSV1resistance")
+      .collection("HSV1Polymerase")
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            var object = doc.data().Variant
+            HSV1Polymerase.push({ label: object, value: object })
+            this.setState({ tk: HSV1Polymerase })
+          });
+      });
+  }
+
+  handleSubmit() {
+    if (this.state.selectedPolymerase === [] &&
+      this.state.selectedThymidine === []) {
+      this.setState({ empty: true });
+      console.log("YOOOO")
+    } else {
+      let drugarray = [];
+      for (let i = 0; i < this.state.drugs.length; i++) {
+        drugarray.push(this.state.drugs[i].label)
+      }
+      this.setState({ empty: false });
+      if (this.state.submitClicked === true) {
+        this.setState({
+          selecteddrugs: drugarray,
+          selectedPolymerase: [],
+          selectedThymidine: [],
+        })
+      }
+      this.setState({ submitClicked: !this.state.submitClicked })
+    }
+  }
+
+  updateInput23(event) {
+    this.setState({ input: event.target.value })
+    this.setState({ txt23: event.target.value })
+    let tkstate = [];
+    let fasta_sequence = event.target.value;
+    for (let i = 0; i < this.state.tk.length; i++) {
+      let variant = this.state.tk[i].value;
+      if (variant.match(/\d+/g) !== null) {
+        let loc = variant.match(/\d+/g).map(Number)[0];
+        if (fasta_sequence.charAt(loc - 1) === variant[variant.length - 1]) {
+          tkstate.push(variant)
+        }
+      }
+    }
+    if (fasta_sequence.length > 30) {
+      toast.success("UL23 sequence alignment finished!", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+    let data = [];
+    for (let i = 0; i < tkstate.length; i++) {
+      let docRef = db.collection('HSV1resistance')
+        .doc("HSV1resistance")
+        .collection("HSV1ThymidineKinase").doc(tkstate[i]);
+      docRef.get().then(function (doc) {
+        if (doc.exists) {
+          data.push(doc.data());
+        }
+      }).catch(function (error) {
+        console.log("Error getting document:", error);
+      });
+    }
+    this.setState({ selectedThymadine: data })
+  }
+
+  updateInput30(event) {
+    this.setState({ input: event.target.value })
+    let polstate = [];
+    let fasta_sequence = event.target.value;
+    for (let i = 0; i < this.state.poly.length; i++) {
+      let variant = this.state.poly[i].value;
+      if (variant.match(/\d+/g) !== null) {
+        let loc = variant.match(/\d+/g).map(Number)[0];
+        if (fasta_sequence.charAt(loc - 1) === variant[variant.length - 1]) {
+          polstate.push(variant)
+        }
+      }
+    }
+    if (fasta_sequence.length > 30) {
+      toast.success("UL30 sequence alignment finished!", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+    let data = [];
+    for (let i = 0; i < polstate.length; i++) {
+      let docRef = db.collection('HSV1resistance')
+        .doc("HSV1resistance")
+        .collection("HSV1Polymerase").doc(polstate[i]);
+      docRef.get().then(function (doc) {
+        if (doc.exists) {
+          data.push(doc.data());
+        }
+      }).catch(function (error) {
+        console.log("Error getting document:", error);
+      });
+    }
+    this.setState({ selectedPolymerase: data })
+  }
+
+
+  submitFile = (gene) => (event) => {
+    const formData = new FormData();
+    formData.append('file', event.target.files[0]);
+    formData.append('string', gene)
+    var headers = {
+      'Content-Type': 'multipart/form-data',
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
+    }
+    if (gene === 'hsv1tk') {
+      this.setState({ txt23: 'loading...' });
+    } else if (gene === 'hsv1pol') {
+      this.setState({ txt30: 'loading...' });
+    }
+    let extension = event.target.files[0].name.match(/\.[0-9a-z]+$/i)[0];
+    console.log(extension)
+    if (extension === '.fasta' || extension === '.fa') {
+      let reader = new FileReader();
+      reader.onload = function (e) {
+        let result = reader.result;
+        console.log(result.toString())
+        // break the textblock into an array of lines
+        var lines = result.split('\n');
+        lines.splice(0, 1);
+        var newtext = lines.join('\n');
+        result = newtext.replace(/\n|\r/g, "");
+        if (gene === 'hsv2tk') {
+          this.setState({ txt23: result });
+        } else if (gene === 'hsv2pol') {
+          this.setState({ txt30: result });
+        }
+      }.bind(this)
+      reader.readAsText(event.target.files[0]);
+    } else if (extension === '.ab1' || extension === '.abi') {
+      axios.post(`http://ec2-52-41-160-246.us-west-2.compute.amazonaws.com:3000/test-upload`, formData, {
+        headers: headers
+      }).then(response => {
+        console.log(response.data)
+        if (gene === 'hsv1tk') {
+          this.updateInput23({ target: { value: response.data } });
+          this.setState({ txt23: response.data });
+        } else if (gene === 'hsv1pol') {
+          this.updateInput30({ target: { value: response.data } });
+          this.setState({ txt30: response.data });
+        }
+      }).catch(error => {
+        console.log(error)
+      });
+    } else {
+      toast.error("File extension must be .ab1 .abi .fasta .fa", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      if (gene === 'hsv1tk') {
+        this.setState({ txt23: 'Improper File Type' });
+      } else if (gene === 'hsv1pol') {
+        this.setState({ txt30: 'Improper File Type' });
+      }
+    }
+    console.log("file submitted")
+  }
+
+  onChangeSelectionDrug(value) {
+    let drugsarr = value.split(',');
+    this.setState({
+      selecteddrugs: drugsarr
+    });
+  }
+
+  clearTextArea = gene => {
+    if (gene === 'hsv1tk') {
+      this.setState({ txt23: '' });
+    } else if (gene === 'hsv1pol') {
+      this.setState({ txt30: '' });
+    }
+  }
+
+
+  render() {
+    var descriptionTool = <p>Choose an AB1 or FASTA file from your computer.<br /> Once a suitable alignment appears in the textbox below, click analyze.</p>;
+    if (this.state.loaded) {
+      return (
+        <div className="container">
+          {
+            this.state.submitClicked ?
+              <div>
+                <div>
+                  <p>{this.state.mutation_list}</p>
+                  {/* <Results selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results> */}
+                  <HSVResults selecteddrugs={this.state.selecteddrugs} epistasis={[]} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
                   <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
                 </div>
               </div>
@@ -862,9 +1198,31 @@ class HSV1FileInput extends Component {
                   customCss={css`white-space: nowrap;`}>
                   <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
                 </Tooltip>
-                <input label='upload file' type='file' onChange={this.submitFile('hsv1tk')} />
-                <textarea value={this.state.txt54} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL56</button>
+                <div className="input-group">
+                  <div className="custom-file">
+                    <input
+                      type="file"
+                      className="custom-file-input"
+                      id="inputGroupFile01"
+                      aria-describedby="inputGroupFile01"
+                      label='upload file'
+                      onChange={this.submitFile('hsv1tk')}
+                    />
+                    <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
+                      Choose file
+                    </label>
+                  </div>
+                </div>
+                {/* <input label='upload file' type='file' onChange={this.submitFile('hsv1tk')} /> */}
+                {/* <textarea value={this.state.txt54} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea> */}
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => this.clearTextArea('hsv1tk')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
+                    <i className="fa fa-close"></i>
+                  </button>
+                  <textarea value={this.state.txt23} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput23}></textarea>
+                </div>
+
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL23</button>
 
                 <h3 className='FileInput-headers' style={{ display: 'inline-block' }}><strong>UL30 - DNA Polymerase</strong></h3>
                 <Tooltip
@@ -874,9 +1232,30 @@ class HSV1FileInput extends Component {
                   customCss={css`white-space: nowrap;`}>
                   <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
                 </Tooltip>
-                <input label='upload file' type='file' onChange={this.submitFile('hsv1pol')} />
-                <textarea value={this.state.txt56} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL97</button>
+                <div className="input-group">
+                  <div className="custom-file">
+                    <input
+                      type="file"
+                      className="custom-file-input"
+                      id="inputGroupFile01"
+                      aria-describedby="inputGroupFile01"
+                      label='upload file'
+                      onChange={this.submitFile('hsv1pol')}
+                    />
+                    <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
+                      Choose file
+                    </label>
+                  </div>
+                </div>
+                {/* <input label='upload file' type='file' onChange={this.submitFile('hsv1pol')} /> */}
+                {/* <textarea value={this.state.txt56} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea> */}
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => this.clearTextArea('hsv1pol')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
+                    <i className="fa fa-close"></i>
+                  </button>
+                  <textarea value={this.state.txt30} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput30}></textarea>
+                </div>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL30</button>
                 <ToastContainer />
               </div>
           }
@@ -1158,100 +1537,81 @@ class CMVFileInput extends Component {
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
     }
-    axios.post(`http://localhost:9000/test-upload`, formData, {
-      headers: headers
-    }).then(response => {
-      console.log(response.data)
+    if (gene === 'cmvphos') {
+      this.setState({ txt97: 'loading...' });
+    } else if (gene === 'cmvterm') {
+      this.setState({ txt56: 'loading...' });
+    } else if (gene === 'cmvpol') {
+      this.setState({ txt54: 'loading...' });
+    }
+    let extension = event.target.files[0].name.match(/\.[0-9a-z]+$/i)[0];
+    console.log(extension)
+    if (extension === '.fasta' || extension === '.fa') {
+      let reader = new FileReader();
+      reader.onload = function (e) {
+        let result = reader.result;
+        // break the textblock into an array of lines
+        var lines = result.split('\n');
+        lines.splice(0, 1);
+        var newtext = lines.join('\n');
+        result = newtext.replace(/\n|\r/g, "");
+        if (gene === 'cmvphos') {
+          this.setState({ txt97: result });
+        } else if (gene === 'cmvterm') {
+          this.setState({ txt56: result });
+        } else if (gene === 'cmvpol') {
+          this.setState({ txt54: result });
+        }
+      }.bind(this)
+      reader.readAsText(event.target.files[0]);
+    } else if (extension === '.ab1' || extension === '.abi') {
+      axios.post(`http://ec2-52-41-160-246.us-west-2.compute.amazonaws.com:3000/test-upload`, formData, {
+        headers: headers
+      }).then(response => {
+        console.log(response.data)
+        if (gene === 'cmvphos') {
+          this.updateInput97({ target: { value: response.data } });
+          this.setState({ txt97: response.data });
+        } else if (gene === 'cmvterm') {
+          this.updateInput56({ target: { value: response.data } });
+          this.setState({ txt56: response.data });
+        } else if (gene === 'cmvpol') {
+          this.updateInput54({ target: { value: response.data } });
+          this.setState({ txt54: response.data });
+        }
+      }).catch(error => {
+        console.log(error)
+      });
+      console.log("requesting")
+    } else {
+      toast.error("File extension must be .ab1 .abi .fasta .fa", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       if (gene === 'cmvphos') {
-        this.updateInput97({ target: { value: response.data } });
-        this.setState({ txt97: response.data });
+        this.setState({ txt97: 'Improper File Type.' });
       } else if (gene === 'cmvterm') {
-        this.updateInput56({ target: { value: response.data } });
-        this.setState({ txt56: response.data });
+        this.setState({ txt56: 'Improper File Type.' });
       } else if (gene === 'cmvpol') {
-        this.updateInput54({ target: { value: response.data } });
-        this.setState({ txt54: response.data });
+        this.setState({ txt54: 'Improper File Type.' });
       }
-    }).catch(error => {
-      console.log(error)
-    });
-    console.log("done")
+    }
   }
 
-  // submitFileTerm = (event) => {
-  //   event.preventDefault();
-  //   const formData = new FormData();
-  //   formData.append('file', this.state.file[0]);
-  //   formData.append('string', 'cmvpol')
-  //   var headers = {
-  //     'Content-Type': 'multipart/form-data',
-  //     "Access-Control-Allow-Origin": "*",
-  //     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-  //     "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
-  //   }
-  //   axios.post(`http://localhost:9000/test-upload`, formData, {
-  //     headers: headers
-  //   }).then(response => {
-  //     console.log(response.data)
-  //     this.updateInput97({ target: { value: response.data } })
-  //     this.setState({ txt97: response.data })
-  //   }).catch(error => {
-  //     console.log(error)
-  //   });
-  //   console.log("done")
-  // }
-
-  // submitFilePol = (event) => {
-  //   event.preventDefault();
-  //   const formData = new FormData();
-  //   formData.append('file', this.state.file[0]);
-  //   formData.append('string', 'cmvpol')
-  //   var headers = {
-  //     'Content-Type': 'multipart/form-data',
-  //     "Access-Control-Allow-Origin": "*",
-  //     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-  //     "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
-  //   }
-  //   axios.post(`http://localhost:9000/test-upload`, formData, {
-  //     headers: headers
-  //   }).then(response => {
-  //     console.log(response.data)
-  //     this.updateInput97({ target: { value: response.data } })
-  //     this.setState({ txt97: response.data })
-  //   }).catch(error => {
-  //     console.log(error)
-  //   });
-  //   console.log("done")
-  // }
-
-  // handleFileUploadPhos(event) {
-  //   // event.preventDefault();
-  //   // this.setState({ file: event.target.files });
-  //   const formData = new FormData();
-  //   formData.append('file', event.target.files);
-  //   formData.append('string', 'cmvphos')
-  //   console.log(event.target.files)
-  //   var headers = {
-  //     'Content-Type': 'multipart/form-data',
-  //     "Access-Control-Allow-Origin": "*",
-  //     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-  //     "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
-  //   }
-  //   axios.post(`http://localhost:9000/test-upload`, formData, {
-  //     headers: headers
-  //   }).then(response => {
-  //     console.log(response.data)
-  //     this.updateInput97({ target: { value: response.data } })
-  //     this.setState({ txt97: response.data })
-  //   }).catch(error => {
-  //     console.log(error)
-  //   });
-  //   console.log("done")
-  // }
-
-  // handleFileUpload = (event) => {
-  //   this.setState({ file: event.target.files });
-  // }
+  clearTextArea = gene => {
+    if (gene === 'cmvphos') {
+      this.setState({ txt97: '' });
+    } else if (gene === 'cmvterm') {
+      this.setState({ txt56: '' });
+    } else if (gene === 'cmvpol') {
+      this.setState({ txt54: '' });
+    }
+  }
 
   render() {
     var descriptionTool = <p>Choose an AB1 or FASTA file from your computer.<br /> Once a suitable alignment appears in the textbox below, click analyze.</p>;
@@ -1280,28 +1640,69 @@ class CMVFileInput extends Component {
                   style={{ display: 'inline-block' }}
                   multiline='true'
                   content={descriptionTool}
-                  customCss={css`
-      white-space: nowrap;
-    `}
-                >  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
+                  customCss={css`white-space: nowrap;`}
+                >
+                  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
                 </Tooltip>
-                <input label='upload file' type='file' onChange={this.submitFile('cmvpol')} />
-                <textarea value={this.state.txt54} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL54 FASTA Text Input" onChange={this.updateInput54}></textarea>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL54</button>
+                <div className="input-group">
+                  <div className="custom-file">
+                    <input
+                      type="file"
+                      className="custom-file-input"
+                      id="inputGroupFile01"
+                      aria-describedby="inputGroupFile01"
+                      label='upload file'
+                      onChange={this.submitFile('cmvpol')}
+                    />
+                    <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
+                      Choose file
+                    </label>
+                  </div>
+                </div>
 
+
+
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => this.clearTextArea('cmvpol')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
+                    <i className="fa fa-close"></i>
+                  </button>
+                  <textarea value={this.state.txt54} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL54 FASTA Text Input" onChange={this.updateInput54}></textarea>
+                </div>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL54</button>
 
                 <h3 style={{ display: 'inline-block' }} className='FileInput-headers'><strong>UL56 - Terminase</strong></h3>
                 <Tooltip
                   style={{ display: 'inline-block' }}
                   multiline='true'
                   content={descriptionTool}
-                  customCss={css`
-      white-space: nowrap;
-    `}
-                >  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
+                  customCss={css`white-space: nowrap;`}
+                >
+                  <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
                 </Tooltip>
-                <input label='upload file' type='file' onChange={this.submitFile('cmvterm')} />
-                <textarea value={this.state.txt56} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea>
+                <div className="input-group">
+                  <div className="custom-file">
+                    <input
+                      type="file"
+                      className="custom-file-input"
+                      id="inputGroupFile01"
+                      aria-describedby="inputGroupFile01"
+                      label='upload file'
+                      onChange={this.submitFile('cmvterm')}
+                    />
+                    <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
+                      Choose file
+                    </label>
+                  </div>
+                </div>
+                {/* <input label='upload file' type='file' onChange={this.submitFile('cmvterm')} /> */}
+
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => this.clearTextArea('cmvterm')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
+                    <i className="fa fa-close"></i>
+                  </button>
+                  <textarea value={this.state.txt56} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea>
+                </div>
+
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL56</button>
 
                 <h3 className='FileInput-headers' style={{ display: 'inline-block' }}><strong>UL97 - Phosphotransferase</strong></h3>
@@ -1309,17 +1710,32 @@ class CMVFileInput extends Component {
                   style={{ display: 'inline-block' }}
                   multiline='true'
                   content={descriptionTool}
-                  customCss={css`
-      white-space: nowrap;
-    `}
+                  customCss={css`white-space: nowrap;`}
                 >
                   <button style={{ border: 0, background: 'none' }}><i className="fa fa-question-circle" /></button>
                 </Tooltip>
-                {/* <form onSubmit={this.submitFilePhos}> */}
-                <input label='upload file' type='file' onChange={this.submitFile('cmvphos')} />
-                {/* <button type='submit'>View Proteins from AB1</button>
-                </form> */}
-                <textarea value={this.state.txt97} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
+                <div className="input-group">
+                  <div className="custom-file">
+                    <input
+                      type="file"
+                      className="custom-file-input"
+                      id="inputGroupFile01"
+                      aria-describedby="inputGroupFile01"
+                      label='upload file'
+                      onChange={this.submitFile('cmvphos')}
+                    />
+                    <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
+                      Choose file
+                    </label>
+                  </div>
+                </div>
+                {/* <input label='upload file' type='file' onChange={this.submitFile('cmvphos')} /> */}
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => this.clearTextArea('cmvphos')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
+                    <i className="fa fa-close"></i>
+                  </button>
+                  <textarea value={this.state.txt97} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
+                </div>
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL97</button>
                 <ToastContainer />
               </div>
@@ -1636,7 +2052,7 @@ class HSV2db extends Component {
   }
 
   componentDidMount() {
-    var HSV1ThymidineKinase = []
+    var HSV2ThymidineKinase = []
     db
       .collection('HSV2resistance')
       .doc("HSV2resistance")
@@ -1647,12 +2063,12 @@ class HSV2db extends Component {
           .docs
           .forEach(doc => {
             var object = doc.data().Variant
-            HSV1ThymidineKinase.push({ label: object, value: object })
-            this.setState({ poly: HSV1ThymidineKinase })
+            HSV2ThymidineKinase.push({ label: object, value: object })
+            this.setState({ poly: HSV2ThymidineKinase })
           });
       });
 
-    var HSV1Polymerase = []
+    var HSV2Polymerase = []
     db
       .collection('HSV2resistance')
       .doc("HSV2resistance")
@@ -1663,8 +2079,8 @@ class HSV2db extends Component {
           .docs
           .forEach(doc => {
             var object = doc.data().Variant
-            HSV1Polymerase.push({ label: object, value: object })
-            this.setState({ term: HSV1Polymerase })
+            HSV2Polymerase.push({ label: object, value: object })
+            this.setState({ term: HSV2Polymerase })
           });
       });
   }
@@ -2577,7 +2993,7 @@ class AddVariants extends Component {
         snapshot
           .docs
           .forEach(doc => {
-            var object = JSON.parse(doc._document.data)
+            var object = doc.data();
             var keys = Object.keys(object);
             var i;
             for (i = 0; i < keys.length; i++) {
