@@ -27,13 +27,14 @@ import AWS from 'aws-sdk';
 import axios from 'axios';
 import Tooltip from "react-simple-tooltip"
 import { css } from "styled-components"
-
-// Amplify.configure(aws_exports);
-// import Amplify, { Storage } from 'aws-amplify';
-// import aws_exports from './aws-exports';
-// Amplify.configure(aws_exports);
-// import { withAuthenticator, S3Album } from 'aws-amplify-react';
-
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import Typography from '@material-ui/core/Typography';
+import CardHeader from '@material-ui/core/CardHeader';
+import TextField from '@material-ui/core/TextField';
+import Button from '@material-ui/core/Button';
+import CardActions from '@material-ui/core/CardActions';
+import { StickyContainer, Sticky } from 'react-sticky';
 
 var config = {
   apiKey: "AIzaSyBGflsX38vQ4SVYcsPDXySUmIWZFnbIwao",
@@ -45,6 +46,8 @@ var config = {
 };
 
 firebase.initializeApp(config);
+const provider = new firebase.auth.GoogleAuthProvider();
+const auth = firebase.auth();
 const firestore = firebase.firestore();
 const settings = {};
 firestore.settings(settings);
@@ -100,6 +103,13 @@ class App extends Component {
       .catch((err) => {
         console.log(err)
       })
+
+    // auth.signOut()
+    // .then(() => {
+    //   this.setState({
+    //     user: null
+    //   });
+    // });
   }
 
   componentDidUpdate(prevProps) {
@@ -157,7 +167,7 @@ class App extends Component {
 
                   <NavItem>
                     <Dropdown>
-                      <DropdownToggle nav caret>CMVb</DropdownToggle>
+                      <DropdownToggle nav caret>CMVdb</DropdownToggle>
                       <DropdownMenu basic>
                         <DropdownItem>
                           <NavLink className="nav-link waves-effect waves-light" to="/CMVdb">CMV Manual Input</NavLink>
@@ -198,9 +208,9 @@ class App extends Component {
                   </NavItem>
                 </NavbarNav>
                 <NavbarNav right>
-                  <NavItem>
+                  {/* <NavItem>
                     <NavLink className="nav-link waves-effect waves-light" to="/pending-files">File Library</NavLink>
-                  </NavItem>
+                  </NavItem> */}
                   <NavItem>
                     <Dropdown toggle={this.toggle}>
                       <DropdownToggle nav caret><i className="fa fa-user" aria-hidden="true"></i></DropdownToggle>
@@ -238,15 +248,29 @@ class App extends Component {
             <Route path="/Saved-Sequences" render={(props) => (
               <SavedSequences {...props} uid={this.state.user.uid} user={this.state.user} />
             )} />
-            <Route path="/pending-files" render={(props) => (
-              <PendingFiles {...props} uid={this.state.user.uid} user={this.state.user} />
+
+            <Route path="/CMVdb" render={(props) => (
+              <CMVdb {...props} uid={this.state.user} user={this.state.user} />
             )} />
+
+            <Route path="/HSV1db" render={(props) => (
+              <HSV1db {...props} uid={this.state.user} user={this.state.user} />
+            )} />
+
+            <Route path="/HSV2db" render={(props) => (
+              <HSV2db {...props} uid={this.state.user} user={this.state.user} />
+            )} />
+
+            <Route path="/CMVFileInput" render={(props) => (
+              <CMVFileInput {...props} uid={this.state.user} user={this.state.user} />
+            )} />
+
             <Route path="/WelcomePage" component={WelcomePage} />
-            <Route path="/CMVdb" component={CMVdb} />
+            {/* <Route path="/CMVdb" component={CMVdb} />
             <Route path="/HSV1db" component={HSV1db} />
-            <Route path="/HSV2db" component={HSV2db} />
+            <Route path="/HSV2db" component={HSV2db} /> */}
             <Route path="/AddVariants" component={AddVariants} />
-            <Route path="/CMVFileInput" component={CMVFileInput} />
+            {/* <Route path="/CMVFileInput" component={CMVFileInput} /> */}
             <Route path="/HSV1FileInput" component={HSV1FileInput} />
             <Route path="/HSV2FileInput" component={HSV2FileInput} />
             <Route path="/Results" component={Results} />
@@ -283,18 +307,27 @@ class App extends Component {
   }
 }
 
+{/* <div className="welcomeContainer darken-pseudo darken-with-text">
+<div className="welcomeCover"> */}
 class WelcomePage extends Component {
   render() {
     return (
       <div>
         <div className="welcomeContainer darken-pseudo darken-with-text">
           <div className="welcomeCover">
-            <h3>
-              <strong>Welcome!</strong>
-            </h3>
-            <strong>
-              <p>This page looks for CMV drug resistance</p>
-            </strong>
+            <div style={{
+              marginLeft: '4vw', width: '50vw', fontFamily: "Sans-serif, Times New Roman",
+              fontSize: 'large', color: 'white'
+            }}>
+              <h1 id="title">
+                {/* <strong> */}
+                <p>Find Drug Resistance CMV - HSV1 - HSV2</p>
+                {/* </strong> */}
+              </h1>
+            </div>
+            <p style={{
+              marginLeft: '4vw'
+            }}> Use the navigation bar above to choose a virus and input type</p>
             <a className="ct-btn-scroll ct-js-btn-scroll" href="#section2"><img alt="Arrow Down Icon" src="https://www.solodev.com/assets/anchor/arrow-down.png" /></a>
           </div>
         </div>
@@ -312,37 +345,32 @@ class WelcomePage extends Component {
 }
 
 class SavedSequences extends Component {
-  constructor() {
-    super();
-  }
-  render() {
-    return (
-      <div className="container">
-        <h2 className='pageheader'>Saved Sequences for {this.props.user.email}</h2>
-        <div style={{ height: "50vh", background: '#cbefec', border: '1px solid #009688', padding: '1rem', borderRadius: '5px' }}>
-
-        </div>
-      </div>
-    )
-  }
-}
-
-class PendingFiles extends Component {
 
   constructor() {
     super();
 
     this.state = {
       modalIsOpen: false,
+      savedItems: '',
+      databoolean: true,
+      filtered: [],
+      deleteCard: '',
+      analyzeid: '',
+      submitClicked: false,
+      cmvdrugs: [],
     };
+
 
     this.openModal = this.openModal.bind(this);
     this.afterOpenModal = this.afterOpenModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
+    this.closeModalDelete = this.closeModalDelete.bind(this);
+    this.handleFilterChange = this.handleFilterChange.bind(this)
+    this.viewAnalysis = this.viewAnalysis.bind(this)
   }
 
-  openModal() {
-    this.setState({ modalIsOpen: true });
+  openModal(itemid) {
+    this.setState({ modalIsOpen: true, deleteCard: itemid });
   }
 
   afterOpenModal() {
@@ -353,6 +381,162 @@ class PendingFiles extends Component {
   closeModal() {
     this.setState({ modalIsOpen: false });
   }
+
+  closeModalDelete() {
+    this.setState({
+      modalIsOpen: false, savedItems: this.state.savedItems.filter(function (item) {
+        return item.name !== itemid;
+      })
+    });
+    let itemid = this.state.deleteCard;
+    let uid = this.props.user.uid;
+    firebase.database().ref('users/' + uid + '/' + itemid).remove();
+  }
+
+  handleFilterChange(e) {
+    let currentList = this.state.savedItems;
+    let newList = [];
+
+    if (e.target.value !== "" && currentList.length !== 0) {
+      newList = currentList.filter(item => {
+        const lc = item.name.toLowerCase();
+        const filter = e.target.value.toLowerCase();
+        return lc.includes(filter);
+      });
+    } else {
+      newList = this.state.savedItems;
+    }
+    this.setState({
+      filtered: newList
+    });
+  }
+
+  viewAnalysis(id) {
+    this.setState({ analyzeid: id, submitClicked: true })
+  }
+
+  filterCMV = (e) => {
+    this.setState({ cmvfil: e.target.checked })
+    if (this.state.hsv1fil === true || this.state.hsv2fil === true) {
+      this.setState({
+        hsv1fil: false,
+        hsv2fil: false
+      });
+    }
+    let currentList = this.state.savedItems;
+    let newList = [];
+    if (e.target.checked) {
+      newList = currentList.filter(item => {
+        if (item.virus === 'CMV') {
+          return true;
+        }
+      });
+    } else {
+      newList = this.state.savedItems;
+    }
+    this.setState({
+      filtered: newList
+    });
+  }
+
+  filterHSV1 = (e) => {
+    this.setState({ hsv1fil: e.target.checked })
+    if (this.state.cmvfil === true || this.state.hsv2fil === true) {
+      this.setState({
+        cmvfil: false,
+        hsv2fil: false
+      });
+    }
+    let currentList = this.state.savedItems;
+    let newList = [];
+    if (e.target.checked) {
+      newList = currentList.filter(item => {
+        if (item.virus === 'hsv1') {
+          return true;
+        }
+      });
+    } else {
+      newList = this.state.savedItems;
+    }
+    this.setState({
+      filtered: newList
+    });
+  }
+
+  filterHSV2 = (e) => {
+    this.setState({ hsv2fil: e.target.checked })
+    if (this.state.hsv1fil === true || this.state.cmvfil === true) {
+      this.setState({
+        hsv1fil: false,
+        cmvfil: false
+      });
+    }
+    let currentList = this.state.savedItems;
+    let newList = [];
+    if (e.target.checked) {
+      newList = currentList.filter(item => {
+        if (item.virus === 'hsv2') {
+          return true;
+        }
+      });
+    } else {
+      newList = this.state.savedItems;
+    }
+    this.setState({
+      filtered: newList
+    });
+  }
+
+  componentWillMount() {
+    Modal.setAppElement('body');
+  }
+
+  componentDidMount() {
+    this.setState({ loading: true });
+    let user = this.props.user
+    let uid = this.props.user.uid
+    let ref = firebase.database().ref('users/' + uid);
+    let data = [];
+    ref.on('value', snapshot => {
+      let savedItems = snapshot.val();
+      if (savedItems !== null) {
+        const object = snapshot.val();
+        const list = Object.keys(object || {}).map(key => ({
+          ...object[key],
+          name: key,
+        }));
+        var drugarray = [];
+        var drugobj = [];
+        db
+          .collection('drug')
+          .get()
+          .then(snapshot => {
+            snapshot
+              .docs
+              .forEach(doc => {
+                var object = doc.data()
+                var keys = Object.keys(object);
+                this.setState({
+                  savedItems: list,
+                  filtered: list,
+                  loading: false,
+                  cmvdrugs: keys
+
+                });
+              });
+          });
+      } else {
+        this.setState({
+          databool: false,
+        });
+      }
+    });
+  }
+
+  handleSubmit() {
+    this.setState({ submitClicked: !this.state.submitClicked })
+  }
+
 
   render() {
     const customStyles = {
@@ -367,124 +551,179 @@ class PendingFiles extends Component {
     };
     return (
       <div className="container">
-        <h2 className="pageheader">
-          File Library
+        {
+          this.state.submitClicked ?
+            <div>
+              <StickyContainer>
+                <Sticky>{({ style }) => <div style={{ position: 'absolute', right: '10vw' }} ><button style={style} onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button></div>}</Sticky>
+                <div>
+                  <p>{this.state.mutation_list}</p>
+                  <Results selecteddrugs={this.state.cmvdrugs} epistasis={[]} selected97phos={this.state.analyzeid.phos97} selected54poly={this.state.analyzeid.poly54} selected56term={this.state.analyzeid.term56} isClicked={this.state.submitClicked}></Results>
+                </div>
+              </StickyContainer>
+            </div>
+            :
+            <div>
+              <h2 className="pageheader">
+                File Library
       </h2>
-        {this.props.user != 0 ?
-          <div>
-            <p>{this.props.user.email}'s Library</p>
-          </div>
-          :
-          <div>
-            <p>Current Session Library</p>
-          </div>
+              {this.props.user != 0 ?
+                <div>
+                  <p>{this.props.user.email}'s Library</p>
+                </div>
+                :
+                <div>
+                  <p>Current Session Library</p>
+                </div>
+              }
+              <input type="text" className="input" onChange={(this.handleFilterChange)} placeholder="Search..." />
+              <div style={{ background: '#cbefec', border: '1px solid #009688', padding: '1rem', borderRadius: '5px', marginBottom: '1rem' }}>
+                <div>
+                  {this.state.loading === false ?
+                    <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
+                      {this.state.filtered.map(item => (
+                        <FileCardComplete key={item.name} analyze={this.viewAnalysis} delete={this.openModal}
+                          item={item}></FileCardComplete>
+                      ))}
+                    </div>
+                    :
+                    <div>
+                      {this.state.databool === false ?
+                        <p>No Saved Items</p>
+                        :
+                        <p>loading</p>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <Modal
+                isOpen={this.state.modalIsOpen}
+                onAfterOpen={this.afterOpenModal}
+                onRequestClose={this.closeModal}
+                style={customStyles}
+                contentLabel="Example Modal"
+              >
+
+                <h2 ref={subtitle => this.subtitle = subtitle}>Are you sure you want to delete this sequence?</h2>
+                <form>
+                  <button className='btn btn-danger' onClick={this.closeModalDelete}>yes</button>
+                  <button className='btn btn-primary' onClick={this.closeModal}>no</button>
+                </form>
+              </Modal>
+            </div>
         }
-        <div style={{ background: '#cbefec', border: '1px solid #009688', padding: '1rem', borderRadius: '5px', marginBottom: '1rem' }}>
-          <h3>
-            Completed
-      </h3>
-          <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
-            <FileCardComplete delete={this.openModal} filename='hsv.ab1' variants='H382V' virustype='HSV-1' date='00/00/00'></FileCardComplete>
-            <FileCardComplete delete={this.openModal} filename='cmv.fasta' variants='I223C' virustype='CMV' date='00/00/00'></FileCardComplete>
-          </div>
-        </div>
-        <div style={{ background: '#cbefec', border: '1px solid #009688', padding: '1rem', borderRadius: '5px', marginBottom: '1rem' }}>
-          <h3>
-            Pending
-      </h3>
-          <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
-            <FileCardIncomplete delete={this.openModal} filename='cmv2.fasta' status='Running' virustype='CMV' date='00/00/00'></FileCardIncomplete>
-          </div>
-        </div>
-
-        <Modal
-          isOpen={this.state.modalIsOpen}
-          onAfterOpen={this.afterOpenModal}
-          onRequestClose={this.closeModal}
-          style={customStyles}
-          contentLabel="Example Modal"
-        >
-
-          <h2 ref={subtitle => this.subtitle = subtitle}>Are you sure you want to delete this sequence?</h2>
-          <form>
-            <button className='btn btn-danger' onClick={this.closeModal}>yes</button>
-            <button className='btn btn-primary' onClick={this.closeModal}>no</button>
-          </form>
-        </Modal>
       </div>
     )
   }
 }
+
 
 class FileCardComplete extends Component {
 
   constructor() {
     super();
     this.state = {
-      saved: false
+      saved: false,
     }
   }
 
   click = () => {
-    this.props.delete();
-  }
-  handleSave = () => {
-    this.setState({ saved: true })
-    let UserRef = firebase.database().ref('Users');
-    let foundKey = false;
-    Object.keys(UserRef).forEach((key) => {
-      if (key === this.props.uid) {
-        foundKey = true;
-        UserRef.child(key).child('SaveSeq').push({
-          Name: this.props.filename + this.props.date + this.props.virus,
-        }).catch(err => console.log(err));
-      }
-    }
-    )
-    if (!foundKey) {
-      firebase.database().ref('Users/' + this.props.uid + '/SaveSeq/' + this.props.id + "/").set(
-        {
-          Name: this.props.filename + this.props.date + this.props.virus,
-        }
-      ).catch(err => console.log(err));
-    }
-
-    foundKey = false;
+    this.props.delete(this.props.item.name);
   }
 
-
-
-  componentDidMount() {
-    if (this.props.uid !== undefined) {
-      let ref = firebase.database().ref('Users').child(this.props.uid).child('Climbs');
-      ref.on('value', (snapshot) => {
-        this.setState({
-          climbs: snapshot.val()
-        });
-        console.log(this.state.climbs);
-
-        console.log(snapshot.val())
-      })
-
-    }
+  analyze = () => {
+    this.props.analyze(this.props.item);
   }
+
+  // handleSave = () => {
+  //   this.setState({ saved: true })
+  //   let UserRef = firebase.database().ref('Users');
+  //   let foundKey = false;
+  //   Object.keys(UserRef).forEach((key) => {
+  //     if (key === this.props.uid) {
+  //       foundKey = true;
+  //       UserRef.child(key).child('SaveSeq').push({
+  //         Name: this.props.filename + this.props.date + this.props.virus,
+  //       }).catch(err => console.log(err));
+  //     }
+  //   }
+  //   )
+  //   if (!foundKey) {
+  //     firebase.database().ref('Users/' + this.props.uid + '/SaveSeq/' + this.props.id + "/").set(
+  //       {
+  //         Name: this.props.filename + this.props.date + this.props.virus,
+  //       }
+  //     ).catch(err => console.log(err));
+  //   }
+
+  //   foundKey = false;
+  // }
 
   render() {
+    var item = this.props.item;
+    var variants = [];
+    if (item.virus === "CMV") {
+      let phos = '';
+      let poly = '';
+      let term = '';
+      if (item.phos97 !== undefined && item.phos97 !== 0) {
+        item.phos97.map(item => {
+          phos += item.Variant + ' ';
+        })
+        variants.push(<div><strong>Phosphotransferase: </strong> {phos}</div>)
+      } else {
+        item.phos97 = [];
+      }
+      if (item.term56 !== undefined && item.term56.length !== 0) {
+        item.term56.map(item => {
+          term += item.Variant + ' ';
+        })
+        variants.push(<div><strong>Terminase: </strong> {term}</div>)
+      } else {
+        item.term56 = [];
+        console.log(item.term56)
+      }
+      if (item.poly54 !== undefined && item.poly54 !== 0) {
+        item.poly54.map(item => {
+          poly += item.Variant + ' ';
+        })
+        variants.push(<div><strong>Polymerase: </strong> {poly}</div>)
+      } else {
+        item.poly54 = [];
+      }
+    }
     return (
-      <div className='filecard'>
-        <a style={{ float: 'right' }} onClick={this.click}><i className="fa fa-remove" aria-hidden="true" /></a>
-        <h4 style={{ marginBottom: 0 }}><strong>{this.props.filename}</strong> - {this.props.date}</h4>
-        <p style={{ marginBottom: 0 }}>Virus: {this.props.virustype}</p>
-        <p style={{ marginBottom: 0 }}>Summary Variants: {this.props.variants}</p>
-        <div style={{ display: 'flex', flexDirection: 'row' }}>
-          <button style={{ marginBottom: 0, padding: '.4rem' }} className='btn btn-primary btn-sm'>Full Results</button>
-          {this.state.saved ?
-            <p style={{ marginTop: '1rem', color: 'green' }}>Saved</p>
-            :
-            <button style={{ marginBottom: 0, padding: '.4rem' }} className='btn btn-primary btn-sm' onClick={this.handleSave}>Save</button>
-          }
-        </div>
-      </div>
+      <Card style={{ margin: '5px' }}>
+        <CardContent style={{ paddingBottom: 0 }}>
+          <button onClick={this.click} style={{
+            background: "none", border: "none", float: "right"
+          }}>
+            <i className="fa fa-close"></i>
+          </button>
+          <Typography component="h2" style={{ fontSize: "1.5em" }}>
+            <strong>{item.name}</strong>
+          </Typography>
+          <Typography component="p" color="textSecondary">
+            {item.date}
+          </Typography>
+          <Typography component="p" color="textSecondary">
+            {item.time}
+          </Typography>
+          <Typography component="p">
+            Virus: {item.virus}
+          </Typography>
+          {
+            variants.map(function (item, index) {
+              return <Typography key={index} style={{ marginBottom: 0, maxWidth: '15vw' }} component="div">{item}</Typography>
+            })}
+
+        </CardContent>
+        <CardActions>
+          <Button onClick={this.analyze} size="small">Full Results</Button>
+        </CardActions>
+      </Card>
     )
   }
 }
@@ -527,7 +766,9 @@ class HSV2FileInput extends Component {
       drugs: [],
       selectedPolymerase: [],
       selectedThymidine: [],
-      loaded: false
+      loaded: false,
+      ul23filename: 'Choose file',
+      ul30filename: 'Choose file',
     }
   }
 
@@ -695,7 +936,6 @@ class HSV2FileInput extends Component {
     this.setState({ selectedPolymerase: data })
   }
 
-
   submitFile = (gene) => (event) => {
     const formData = new FormData();
     formData.append('file', event.target.files[0]);
@@ -707,9 +947,9 @@ class HSV2FileInput extends Component {
       "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
     }
     if (gene === 'hsv2tk') {
-      this.setState({ txt23: 'loading...' });
+      this.setState({ txt23: 'loading...', ul23filename: event.target.files[0].name });
     } else if (gene === 'hsv2pol') {
-      this.setState({ txt30: 'loading...' });
+      this.setState({ txt30: 'loading...', ul30filename: event.target.files[0].name });
     }
     let extension = event.target.files[0].name.match(/\.[0-9a-z]+$/i)[0];
     console.log(extension)
@@ -816,11 +1056,11 @@ class HSV2FileInput extends Component {
                       className="custom-file-input"
                       id="inputGroupFile01"
                       aria-describedby="inputGroupFile01"
-                      label='upload file'
+                      label={'upload file'}
                       onChange={this.submitFile('hsv2tk')}
                     />
                     <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
-                      Choose file
+                      {this.state.ul23filename}
                     </label>
                   </div>
                 </div>
@@ -830,10 +1070,10 @@ class HSV2FileInput extends Component {
                   <button onClick={() => this.clearTextArea('hsv2tk')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
                     <i className="fa fa-close"></i>
                   </button>
-                  <textarea value={this.state.txt23} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea>
+                  <textarea value={this.state.txt23} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL23 FASTA Text Input" onChange={this.updateInput56}></textarea>
                 </div>
 
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL56</button>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL23</button>
 
                 <h3 className='FileInput-headers' style={{ display: 'inline-block' }}><strong>UL30 - DNA Polymerase</strong></h3>
                 <Tooltip
@@ -854,7 +1094,7 @@ class HSV2FileInput extends Component {
                       onChange={this.submitFile('hsv2pol')}
                     />
                     <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
-                      Choose file
+                      {this.state.ul30filename}
                     </label>
                   </div>
                 </div>
@@ -864,9 +1104,9 @@ class HSV2FileInput extends Component {
                   <button onClick={() => this.clearTextArea('hsv2pol')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
                     <i className="fa fa-close"></i>
                   </button>
-                  <textarea value={this.state.txt30} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
+                  <textarea value={this.state.txt30} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL30 FASTA Text Input" onChange={this.updateInput97}></textarea>
                 </div>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL97</button>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL30</button>
                 <ToastContainer />
               </div>
           }
@@ -898,7 +1138,9 @@ class HSV1FileInput extends Component {
       drugs: [],
       selectedPolymerase: [],
       selectedThymidine: [],
-      loaded: false
+      loaded: false,
+      ul23filename: 'Choose file',
+      ul30filename: 'Choose file',
     }
   }
 
@@ -1096,9 +1338,9 @@ class HSV1FileInput extends Component {
       "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
     }
     if (gene === 'hsv1tk') {
-      this.setState({ txt23: 'loading...' });
+      this.setState({ txt23: 'loading...', ul23filename: event.target.files[0].name });
     } else if (gene === 'hsv1pol') {
-      this.setState({ txt30: 'loading...' });
+      this.setState({ txt30: 'loading...', ul30filename: event.target.files[0].name });
     }
     let extension = event.target.files[0].name.match(/\.[0-9a-z]+$/i)[0];
     console.log(extension)
@@ -1209,7 +1451,7 @@ class HSV1FileInput extends Component {
                       onChange={this.submitFile('hsv1tk')}
                     />
                     <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
-                      Choose file
+                      {this.state.ul23filename}
                     </label>
                   </div>
                 </div>
@@ -1219,7 +1461,7 @@ class HSV1FileInput extends Component {
                   <button onClick={() => this.clearTextArea('hsv1tk')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
                     <i className="fa fa-close"></i>
                   </button>
-                  <textarea value={this.state.txt23} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput23}></textarea>
+                  <textarea value={this.state.txt23} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="U23 FASTA Text Input" onChange={this.updateInput23}></textarea>
                 </div>
 
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL23</button>
@@ -1243,7 +1485,7 @@ class HSV1FileInput extends Component {
                       onChange={this.submitFile('hsv1pol')}
                     />
                     <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
-                      Choose file
+                      {this.state.ul30filename}
                     </label>
                   </div>
                 </div>
@@ -1253,7 +1495,7 @@ class HSV1FileInput extends Component {
                   <button onClick={() => this.clearTextArea('hsv1pol')} style={{ background: "none", border: "none", position: "absolute", right: '0px', top: '0px' }}>
                     <i className="fa fa-close"></i>
                   </button>
-                  <textarea value={this.state.txt30} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput30}></textarea>
+                  <textarea value={this.state.txt30} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL30 FASTA Text Input" onChange={this.updateInput30}></textarea>
                 </div>
                 <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL30</button>
                 <ToastContainer />
@@ -1290,7 +1532,11 @@ class CMVFileInput extends Component {
       selected54poly: [],
       selected56term: [],
       selected97phos: [],
-      loaded: false
+      loaded: false,
+      ul54filename: 'Choose file',
+      ul56filename: 'Choose file',
+      ul97filename: 'Choose file',
+
     }
   }
 
@@ -1538,11 +1784,11 @@ class CMVFileInput extends Component {
       "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization, Origin"
     }
     if (gene === 'cmvphos') {
-      this.setState({ txt97: 'loading...' });
+      this.setState({ txt97: 'loading...', ul97filename: event.target.files[0].name });
     } else if (gene === 'cmvterm') {
-      this.setState({ txt56: 'loading...' });
+      this.setState({ txt56: 'loading...', ul56filename: event.target.files[0].name });
     } else if (gene === 'cmvpol') {
-      this.setState({ txt54: 'loading...' });
+      this.setState({ txt54: 'loading...', ul54filename: event.target.files[0].name });
     }
     let extension = event.target.files[0].name.match(/\.[0-9a-z]+$/i)[0];
     console.log(extension)
@@ -1623,7 +1869,7 @@ class CMVFileInput extends Component {
               <div>
                 <div>
                   <p>{this.state.mutation_list}</p>
-                  <Results selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                  <Results user={this.props.user} selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
                   <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
                 </div>
               </div>
@@ -1655,7 +1901,7 @@ class CMVFileInput extends Component {
                       onChange={this.submitFile('cmvpol')}
                     />
                     <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
-                      Choose file
+                      {this.state.ul54filename}
                     </label>
                   </div>
                 </div>
@@ -1690,7 +1936,7 @@ class CMVFileInput extends Component {
                       onChange={this.submitFile('cmvterm')}
                     />
                     <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
-                      Choose file
+                      {this.state.ul56filename}
                     </label>
                   </div>
                 </div>
@@ -1725,7 +1971,7 @@ class CMVFileInput extends Component {
                       onChange={this.submitFile('cmvphos')}
                     />
                     <label className="custom-file-label" htmlFor="inputGroupFileAddon01">
-                      Choose file
+                      {this.state.ul97filename}
                     </label>
                   </div>
                 </div>
@@ -2337,7 +2583,7 @@ class CMVdb extends Component {
             this.state.submitClicked ?
               <div>
                 <div>
-                  <Results selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                  <Results user={this.props.user} selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
                   <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
                 </div>
               </div>
@@ -2386,11 +2632,20 @@ class Results extends Component {
       termvarreference: [],
       colheaders: ["Variant", "Reference", "Comments"],
       foldobj: [],
-      headers: []
+      headers: [],
+      modalIsOpen: false,
+      saved: false,
+      saveName: '',
+      savedItems: [],
     };
+    this.openModal = this.openModal.bind(this);
+    this.afterOpenModal = this.afterOpenModal.bind(this);
+    this.closeModal = this.closeModal.bind(this);
+    this.closeModalSave = this.closeModalSave.bind(this);
   }
 
   componentWillMount() {
+    Modal.setAppElement('body');
     var selected54poly = this.state.selected54poly;
     var selected56term = this.state.selected56term;
     var selected97phos = this.state.selected97phos;
@@ -2446,7 +2701,7 @@ class Results extends Component {
     var folddata = [];
     for (let i = 0; i < drugs.length; i++) {
       var drugobj = {};
-      let drug = drugs[i];
+      let drug = drugs[i].replace('fold', '');
       drugs[i] = drug + "fold";
       drugobj["drug"] = drug + "fold";
       drugobj["fold"] = 0;
@@ -2479,16 +2734,79 @@ class Results extends Component {
     }
     columns54.push("Comments")
     columns54.push("Reference")
-    // var data54 = {columns: data: selected54poly}
-    // {
-    //   label: 'Name',
-    //   field: 'name',
-    //   sort: 'asc',
-    //   width: 150
-    // }
+  }
+
+  openModal() {
+    this.setState({ modalIsOpen: true });
+  }
+
+  afterOpenModal() {
+    // references are now sync'd and can be accessed.
+    this.subtitle.style.color = 'black';
+    this.subtitle.style.fontWeight = 'bold'
+  }
+
+  closeModal() {
+    this.setState({ modalIsOpen: false });
+  }
+
+  componentDidMount() {
+    if (this.props.user) {
+      let uid = this.props.user.uid
+      let ref = firebase.database().ref('users/' + uid);
+      let data = new Array();
+      ref.on('value', snapshot => {
+        const savedItems = snapshot.val();
+        if (savedItems !== null) {
+          Object.keys(savedItems).map(function (key, item) {
+            data.push(key)
+          })
+          this.setState({
+            savedItems: data,
+          });
+        }
+      });
+    }
+  }
+
+  closeModalSave() {
+    var today = new Date();
+    var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    this.setState({ modalIsOpen: false, saved: true });
+    firebase.database().ref('users/' + this.props.user.uid + '/' + this.state.saveName).set({
+      name: this.state.saveName,
+      virus: 'CMV',
+      poly54: this.state.selected54poly,
+      term56: this.state.selected56term,
+      phos97: this.state.selected97phos,
+      date: date,
+      time: time
+    });
+  }
+  onChangeSaveName = event => {
+    this.setState({ saveName: event.target.value });
   }
 
   render() {
+    let invalid = false;
+    if (this.state.saveName.trim() === '' || this.state.savedItems.includes(this.state.saveName)) {
+      invalid = true;
+    }
+    let labeltaken = false;
+    if (this.state.savedItems.includes(this.state.saveName)) {
+      labeltaken = true;
+    }
+    const customStyles = {
+      content: {
+        top: '50%',
+        left: '50%',
+        right: 'auto',
+        bottom: 'auto',
+        marginRight: '-50%',
+        transform: 'translate(-50%, -50%)'
+      }
+    }
     var folddata = this.state.foldobj;
     var foldtotal = 0;
     for (let i = 0; i < folddata.length; i++) {
@@ -2496,96 +2814,166 @@ class Results extends Component {
     }
     return (
       <div>
-        <h1 className="pageheader">Results:</h1>
-        <h2 style={{ textDecoration: 'underline' }}>Drug Resistance Profile</h2>
-        <p>Fold change by drug</p>
-        <div className="drugProfile">
-          {foldtotal === 0 ?
-            <p style={{ "color": "red" }}>
-              No fold data available for the selected drugs
-            </p>
-            :
-            <table className="table">
-              <thead>
-                <tr>
-                  <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
-                  <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
-                </tr>
-              </thead>
-              <tbody>
-                {
-                  folddata.map((drug) =>
-                    <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
-                }
-              </tbody>
-            </table>
-          }
-        </div>
         <div>
-          <h2 style={{ textDecoration: 'underline' }}>Individual Variant Resistance</h2>
-          {
-            this.state.selected54poly.length !== 0 ?
+          {foldtotal === 0 ?
+            <div>
+              <h1 className="pageheader">Results:</h1>
+              <h2 style={{ textDecoration: 'underline' }}>Drug Resistance Profile</h2>
+              <p>Fold change by drug</p>
+              <div className="drugProfile">
+                <p style={{ "color": "red", "fontWeight": "bold" }}>
+                  No fold data available for the selected drugs:
+              {
+                    this.props.selecteddrugs.map(function (drug, i) {
+                      return <li key={i}>{drug.replace("fold", "").slice(0, 1).toUpperCase()
+                        + drug.replace("fold", "").slice(1, drug.replace("fold", "").length)}</li>
+                    }
+                    )}
+                </p>
+              </div>
+            </div>
+            :
+            <div>
+              <h1 className="pageheader" style={{ display: 'block', borderBottom: 'none' }}>Results:</h1>
+              <h2 style={{ textDecoration: 'underline', display: 'inline-block' }}>Drug Resistance Profile</h2>
+              {this.props.user === '' ?
+                <div style={{ display: 'inline' }}>
+                  <button style={{ padding: '5px', display: 'inline', margin: '0px 0px 0px 10px' }} disabled className="btn btn-success">
+                    Log in to Save
+              <i style={{ marginLeft: '5px' }} className="fa fa-save"></i>
+                  </button>
+                </div>
+                :
+                <div style={{ display: 'inline' }}>
+                  {this.state.saved === false ?
+                    <button style={{ padding: '5px', display: 'inline', margin: '0px 0px 0px 10px' }} onClick={this.openModal} className="btn btn-success">
+                      Save to Profile
+              <i style={{ marginLeft: '5px' }} className="fa fa-save"></i>
+                    </button>
+                    :
+                    <div style={{ color: 'green', display: 'inline', margin: '0px 0px 0px 10px' }}>
+                      <strong>Saved</strong>
+                      <i style={{ marginLeft: '5px' }} className="fa fa-check" aria-hidden="true"></i>
+                    </div>
+                  }
+                </div>
+
+              }
+
+
+              <p>Fold change by drug</p>
+              <div className="drugProfile">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
+                      <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {
+                      folddata.map((drug) =>
+                        <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
+                    }
+                  </tbody>
+                </table>
+              </div>
               <div>
-                <h2>UL54 Polymerase</h2>
-                <BootstrapTable data={this.state.selected54poly} bordered={false} striped hover exportCSV
+                <h2 style={{ textDecoration: 'underline' }}>Individual Variant Resistance</h2>
+                {
+                  this.state.selected54poly.length !== 0 ?
+                    <div>
+                      <h2>UL54 Polymerase</h2>
+                      <BootstrapTable data={this.state.selected54poly} bordered={false} striped hover exportCSV
+                      >
+                        <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='ganciclovirfold'>Ganciclovir-GCV (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                        {/* <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
+                    <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn> */}
+                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+                      </BootstrapTable>
+                    </div>
+                    :
+                    <div></div>
+                }
+                {
+                  this.state.selected56term.length !== 0 ?
+                    <div>
+                      <h2>UL56 Terminase</h2>
+                      <BootstrapTable data={this.state.selected56term} bordered={false} striped hover exportCSV>
+                        <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
+                        {/* <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
+                    <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn> */}
+                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+                      </BootstrapTable>
+                    </div>
+                    :
+                    <div></div>
+                }
+                {
+                  this.state.selected97phos.length !== 0 ?
+                    <div>
+                      <h2>UL97 Phosphotransferase</h2>
+                      <BootstrapTable data={this.state.selected97phos} bordered={false} striped hover exportCSV>
+                        <TableHeaderColumn width='170' dataField='Variant' isKey>Variant</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='cidofovirfold'> Cidofovir (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+                      </BootstrapTable>
+                    </div>
+                    :
+                    <div></div>
+                }
+                {
+                  this.state.selectedepistasis.length !== 0 ?
+                    <div>
+                      <h2>Epistatic Variants</h2>
+                      <BootstrapTable data={this.state.selectedepistasis} bordered={false} striped hover exportCSV>
+                        <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='Comments' dataFormat={activeFormatter}>Comments</TableHeaderColumn>
+                      </BootstrapTable>
+                    </div>
+                    :
+                    <div></div>
+                }
+                <Modal
+                  isOpen={this.state.modalIsOpen}
+                  onAfterOpen={this.afterOpenModal}
+                  onRequestClose={this.closeModal}
+                  style={customStyles}
+                  contentLabel="Example Modal"
                 >
-                  <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='ganciclovirfold'>Ganciclovir-GCV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-                  {/* <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn> */}
-                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
-                </BootstrapTable>
+
+                  <h2 ref={subtitle => this.subtitle = subtitle}>Save Sequence Results</h2>
+                  <form>
+                    <TextField
+                      error={labeltaken}
+                      style={{ display: 'block', margin: '10px', marginRight: 0 }}
+                      className='form-group col-md6'
+                      name="todo"
+                      id="outlined-with-placeholder"
+                      label={labeltaken ? "Name In Use" : "Enter Save Name"}
+                      placeholder="Enter Save Name"
+                      margin="normal"
+                      variant="outlined"
+                      name="todo"
+                      value={this.state.saveName}
+                      onChange={this.onChangeSaveName}
+                    />
+                    <button className='btn btn-danger' onClick={this.closeModal}>Exit</button>
+                    <button className='btn btn-primary' disabled={invalid} onClick={this.closeModalSave}>Save</button>
+                  </form>
+                </Modal>
               </div>
-              :
-              <div></div>
-          }
-          {
-            this.state.selected56term.length !== 0 ?
-              <div>
-                <h2>UL56 Terminase</h2>
-                <BootstrapTable data={this.state.selected56term} bordered={false} striped hover exportCSV>
-                  <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
-                  {/* <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn> */}
-                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
-                </BootstrapTable>
-              </div>
-              :
-              <div></div>
-          }
-          {
-            this.state.selected97phos.length !== 0 ?
-              <div>
-                <h2>UL97 Phosphotransferase</h2>
-                <BootstrapTable data={this.state.selected97phos} bordered={false} striped hover exportCSV>
-                  <TableHeaderColumn width='170' dataField='Variant' isKey>Variant</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='cidofovirfold'> Cidofovir (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
-                </BootstrapTable>
-              </div>
-              :
-              <div></div>
-          }
-          {
-            this.state.selectedepistasis.length !== 0 ?
-              <div>
-                <h2>Epistatic Variants</h2>
-                <BootstrapTable data={this.state.selectedepistasis} bordered={false} striped hover exportCSV>
-                  <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='Comments' dataFormat={activeFormatter}>Comments</TableHeaderColumn>
-                </BootstrapTable>
-              </div>
-              :
-              <div></div>
+            </div>
           }
         </div>
       </div>
@@ -2694,89 +3082,103 @@ class HSVResults extends Component {
     for (let i = 0; i < folddata.length; i++) {
       foldtotal += folddata[i].fold
     }
+    console.log(this.state.selecteddrugs)
     return (
       <div>
         <h1 className="pageheader">Results:</h1>
         <h2>Drug Resistance Profile</h2>
         <p>Fold change by drug</p>
-        <div className="drugProfile">
-          {foldtotal === 0 ?
-            <p style={{ "color": "red" }}>
-              No fold data available for the selected drugs
-            </p>
-            :
-            <table className="table">
-              <thead>
-                <tr>
-                  <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
-                  <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
-                </tr>
-              </thead>
-              <tbody>
-                {
-                  folddata.map((drug) =>
-                    <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
-                }
-              </tbody>
-            </table>
-          }
-        </div>
-        <hr />
         <div>
-          <h2>Individual Variant Resistance</h2>
-          {
-            this.state.selectedThymidine.length !== 0 ?
-              <div>
-                <h3>UL23 Thymidine Kinase</h3>
-                <BootstrapTable data={this.state.selectedThymidine} bordered={false} striped hover exportCSV>
-                  <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
-                  <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
-                </BootstrapTable>
+          {foldtotal === 0 ?
+            <div className="drugProfile">
+              <p style={{ "color": "red", "fontWeight": "bold" }}>
+                No fold data available for the selected drugs:
+              {
+                  this.props.selecteddrugs.map(function (drug, i) {
+                    return <li key={i}>{drug.replace("fold", "").slice(0, 1).toUpperCase()
+                      + drug.replace("fold", "").slice(1, drug.replace("fold", "").length)}</li>
+                  }
+                  )}
+              </p>
+            </div>
+            :
+            <div>
+              <div className="drugProfile">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
+                      <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {
+                      folddata.map((drug) =>
+                        <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
+                    }
+                  </tbody>
+                </table>
               </div>
-              :
-              <div></div>
-          }
-          {
-            this.state.selectedPolymerase.length !== 0 ?
-              <div>
-                <h3>UL30 Polymerase</h3>
-                <BootstrapTable data={this.state.selectedPolymerase} bordered={false} striped hover exportCSV>
-                  <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
-                  <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
-                </BootstrapTable>
+
+              <hr />
+              <div style={{ display: 'block' }}>
+                <h2>Individual Variant Resistance</h2>
+                {
+                  this.state.selectedThymidine.length !== 0 ?
+                    <div>
+                      <h3>UL23 Thymidine Kinase</h3>
+                      <BootstrapTable data={this.state.selectedThymidine} bordered={false} striped hover exportCSV>
+                        <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
+                        <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
+                      </BootstrapTable>
+                    </div>
+                    :
+                    <div></div>
+                }
+                {
+                  this.state.selectedPolymerase.length !== 0 ?
+                    <div>
+                      <h3>UL30 Polymerase</h3>
+                      <BootstrapTable data={this.state.selectedPolymerase} bordered={false} striped hover exportCSV>
+                        <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                        <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
+                      </BootstrapTable>
+                    </div>
+                    :
+                    <div></div>
+                }
+                {
+                  this.state.selectedepistasis.length !== 0 ?
+                    <div>
+                      <h3>Epistatic Variants</h3>
+                      <BootstrapTable data={this.state.selectedepistasis} bordered={false} striped hover exportCSV>
+                        <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
+                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                        <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
+                      </BootstrapTable>
+                    </div>
+                    :
+                    <div></div>
+                }
               </div>
-              :
-              <div></div>
-          }
-          {
-            this.state.selectedepistasis.length !== 0 ?
-              <div>
-                <h3>Epistatic Variants</h3>
-                <BootstrapTable data={this.state.selectedepistasis} bordered={false} striped hover exportCSV>
-                  <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
-                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
-                  <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
-                </BootstrapTable>
-              </div>
-              :
-              <div></div>
+            </div>
           }
         </div>
       </div>

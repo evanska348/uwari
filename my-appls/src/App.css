@@ -206,6 +206,9 @@ body {
   /* background-repeat: no-repeat; */
   background-position: left top;
   background-size: 100%;
+  padding-top: 18vh;
+  /* text-align: center; */
+  display: block;
 }
 
 .darken-pseudo {
@@ -225,23 +228,21 @@ body {
   /* background-color: rgba(0, 0, 0, .5); */
 }
 
-.welcomeContainer {
+/* .welcomeContainer {
   padding-top: 25vh;
   text-align: center;
   display: block;
-}
+} */
 
 .welcomeContainer img {
   display: block;
   margin: 0 auto;
 }
 
-.darken-with-text p, .darken-with-text h3{
+.darken-with-text p, .darken-with-text h1{
   margin: 0;
-  font-size: 3em;
-  text-align: center;
+  font-size: 2em;
   color: white;
-  text-shadow: 2px 2px darkgrey;
   position: relative;
   z-index: 1;
   font-family: Georgia, 'Times New Roman', Times, serif;
@@ -341,4 +342,8 @@ body {
   margin-bottom: 1rem;
   margin-right: 1rem;
   background: linear-gradient(to right, #a4dad5 , #cce2e0)
+}
+
+#title {
+  border-bottom: none;
 }
