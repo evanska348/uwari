@@ -2,7 +2,7 @@
   "name": "my-appls",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://students.washington.edu/evanzhao/uw/uwari/",
+  "homepage": "https://uwari.io",
   "dependencies": {
     "aws-amplify": "^1.1.17",
     "aws-amplify-react": "^2.2.4",

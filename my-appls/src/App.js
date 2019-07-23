@@ -35,6 +35,11 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import CardActions from '@material-ui/core/CardActions';
 import { StickyContainer, Sticky } from 'react-sticky';
+import { isUsernamePasswordOpts } from '@aws-amplify/auth/lib/types';
+import { MDBContainer, MDBRow, MDBCol, MDBBtn } from 'mdbreact';
+import { Redirect, Link } from 'react-router-dom'
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Switch from '@material-ui/core/Switch';
 
 var config = {
   apiKey: "AIzaSyBGflsX38vQ4SVYcsPDXySUmIWZFnbIwao",
@@ -68,6 +73,13 @@ class App extends Component {
     };
     this.onClick = this.onClick.bind(this);
     this.toggle = this.toggle.bind(this);
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        this.setState({ user: user })
+      } else {
+        this.setState({ user: '' })
+      }
+    });
   }
   componentWillMount() {
     var drugarray = []
@@ -104,13 +116,18 @@ class App extends Component {
         console.log(err)
       })
 
-    // auth.signOut()
+    // firebase.auth().signOut()
     // .then(() => {
     //   this.setState({
     //     user: null
     //   });
+    // })
+    // .catch((err) => {
+    //   console.log(err)
     // });
   }
+
+
 
   componentDidUpdate(prevProps) {
     if (this.props.location !== prevProps.location) {
@@ -215,16 +232,7 @@ class App extends Component {
                     <Dropdown toggle={this.toggle}>
                       <DropdownToggle nav caret><i className="fa fa-user" aria-hidden="true"></i></DropdownToggle>
                       <DropdownMenu right>
-                        {this.state.user === '' ?
-                          <div>
-                            <DropdownItem>
-                              {/* <NavLink className="nav-link waves-effect waves-light" to="#" disabled>Login to add Variants</NavLink> */}
-                            </DropdownItem>
-                            <DropdownItem>
-                              <NavLink className="nav-link waves-effect waves-light" to="/login">Login</NavLink>
-                            </DropdownItem>
-                          </div>
-                          :
+                        {this.state.user !== '' ?
                           <div>
                             <DropdownItem>
                               <NavLink className="nav-link waves-effect waves-light" to="/AddVariants">Add Variants</NavLink>
@@ -233,9 +241,21 @@ class App extends Component {
                               <NavLink className="nav-link waves-effect waves-light" to="/Saved-Sequences">Saved Sequences</NavLink>
                             </DropdownItem>
                             <DropdownItem>
+                              <NavLink className="nav-link waves-effect waves-light" to="/ProfileActions">Profile Actions</NavLink>
+                            </DropdownItem>
+                            <DropdownItem>
                               <NavLink className="logoutButton" onClick={this.handleLogout} to="/login">Logout</NavLink>
                             </DropdownItem>
                             {/* <button type='button' className="btn btn-danger btn-sm" onClick={this.handleLogout}>Logout</button> */}
+                          </div>
+                          :
+                          <div>
+                            <DropdownItem>
+                              {/* <NavLink className="nav-link waves-effect waves-light" to="#" disabled>Login to add Variants</NavLink> */}
+                            </DropdownItem>
+                            <DropdownItem>
+                              <NavLink className="nav-link waves-effect waves-light" to="/login">Login</NavLink>
+                            </DropdownItem>
                           </div>
                         }
                       </DropdownMenu>
@@ -244,7 +264,12 @@ class App extends Component {
                 </NavbarNav>
               </MDBCollapse>
             </Navbar>
-            <Route exact path="/evanzhao/uw/uwari/" component={WelcomePage} />
+            {/* <Route exact path="/evanzhao/uw/uwari/" component={WelcomePage} /> */}
+            <Route exact path="/" component={WelcomePage} />
+            <Route path="/ProfileActions" render={(props) => (
+              <PasswordChangeForm {...props} uid={this.state.user.uid} user={this.state.user} />
+            )} />
+
             <Route path="/Saved-Sequences" render={(props) => (
               <SavedSequences {...props} uid={this.state.user.uid} user={this.state.user} />
             )} />
@@ -264,14 +289,18 @@ class App extends Component {
             <Route path="/CMVFileInput" render={(props) => (
               <CMVFileInput {...props} uid={this.state.user} user={this.state.user} />
             )} />
-
+            <Route path="/AddVariants" render={(props) => (
+              <AddVariants {...props} uid={this.state.user} user={this.state.user} />
+            )} />
             <Route path="/WelcomePage" component={WelcomePage} />
             {/* <Route path="/CMVdb" component={CMVdb} />
             <Route path="/HSV1db" component={HSV1db} />
             <Route path="/HSV2db" component={HSV2db} /> */}
-            <Route path="/AddVariants" component={AddVariants} />
+            {/* <Route path="/AddVariants" component={AddVariants} /> */}
             {/* <Route path="/CMVFileInput" component={CMVFileInput} /> */}
             <Route path="/HSV1FileInput" component={HSV1FileInput} />
+            <Route path="/PasswordForget" component={PasswordForgetFormBase} />
+            <Route path="/SignUp" component={SignUpFormBase} />
             <Route path="/HSV2FileInput" component={HSV2FileInput} />
             <Route path="/Results" component={Results} />
             <Route path="/login" render={(props) => (
@@ -285,12 +314,14 @@ class App extends Component {
               <Col sm="6">
                 <h5 className="title">Emails</h5>
                 <p>evanzhao@uw.edu</p>
+                <p>uwvirongs@gmail.com</p>
               </Col>
               <Col sm="6">
                 <h5 className="title">Links</h5>
                 <ul>
                   <li className="list-unstyled"><a href="https://www.viracor-eurofins.com/media/1622/cmv-avr-mutations-references_1217_viracor-eurofins.pdf">Viracor</a></li>
                   <li className="list-unstyled"><a href="https://depts.washington.edu/uwviro/">UW Virology</a></li>
+                  <li className="list-unstyled"><a href="https://github.com/evanska348/uwari">GitHub</a></li>
                 </ul>
               </Col>
             </Row>
@@ -356,8 +387,10 @@ class SavedSequences extends Component {
       filtered: [],
       deleteCard: '',
       analyzeid: '',
-      submitClicked: false,
+      submitClickedHSV: false,
+      submitClickedCMV: false,
       cmvdrugs: [],
+      hsvdrugs: []
     };
 
 
@@ -412,7 +445,12 @@ class SavedSequences extends Component {
   }
 
   viewAnalysis(id) {
-    this.setState({ analyzeid: id, submitClicked: true })
+    console.log(id)
+    if (id.virus === "CMV") {
+      this.setState({ analyzeid: id, submitClickedCMV: true })
+    } else {
+      this.setState({ analyzeid: id, submitClickedHSV: true })
+    }
   }
 
   filterCMV = (e) => {
@@ -451,7 +489,7 @@ class SavedSequences extends Component {
     let newList = [];
     if (e.target.checked) {
       newList = currentList.filter(item => {
-        if (item.virus === 'hsv1') {
+        if (item.virus === 'HSV-1') {
           return true;
         }
       });
@@ -475,7 +513,7 @@ class SavedSequences extends Component {
     let newList = [];
     if (e.target.checked) {
       newList = currentList.filter(item => {
-        if (item.virus === 'hsv2') {
+        if (item.virus === 'HSV-2') {
           return true;
         }
       });
@@ -521,8 +559,20 @@ class SavedSequences extends Component {
                   filtered: list,
                   loading: false,
                   cmvdrugs: keys
-
                 });
+              });
+          });
+        db
+          .collection('HSVdrug')
+          .get()
+          .then(snapshot => {
+            snapshot
+              .docs
+              .forEach(doc => {
+                // var object = JSON.parse(doc._document.data)
+                var object = doc.data();
+                var keys = Object.keys(object);
+                this.setState({ hsvdrugs: keys })
               });
           });
       } else {
@@ -533,8 +583,12 @@ class SavedSequences extends Component {
     });
   }
 
-  handleSubmit() {
-    this.setState({ submitClicked: !this.state.submitClicked })
+  handleSubmit(virus) {
+    if (virus === "HSV") {
+      this.setState({ submitClickedHSV: !this.state.submitClickedHSV })
+    } else if (virus === "CMV") {
+      this.setState({ submitClickedCMV: !this.state.submitClickedCMV })
+    }
   }
 
 
@@ -552,21 +606,35 @@ class SavedSequences extends Component {
     return (
       <div className="container">
         {
-          this.state.submitClicked ?
-            <div>
-              <StickyContainer>
-                <Sticky>{({ style }) => <div style={{ position: 'absolute', right: '10vw' }} ><button style={style} onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button></div>}</Sticky>
-                <div>
-                  <p>{this.state.mutation_list}</p>
-                  <Results selecteddrugs={this.state.cmvdrugs} epistasis={[]} selected97phos={this.state.analyzeid.phos97} selected54poly={this.state.analyzeid.poly54} selected56term={this.state.analyzeid.term56} isClicked={this.state.submitClicked}></Results>
+          this.state.submitClickedHSV || this.state.submitClickedCMV ?
+            (this.state.submitClickedCMV ?
+              <div>
+                <StickyContainer>
+                  <Sticky>{({ style }) => <div style={{ zIndex: '1', position: 'absolute', right: '10vw' }} ><button style={style} onClick={this.handleSubmit.bind(this, "CMV")} className="btn btn-primary" type="submit">Back to Saved Sequences</button></div>}</Sticky>
+                  <div>
+                    <p>{this.state.mutation_list}</p>
+                    <Results saveButton={false} selecteddrugs={this.state.cmvdrugs} epistasis={[]} selected97phos={this.state.analyzeid.phos97} selected54poly={this.state.analyzeid.poly54} selected56term={this.state.analyzeid.term56} isClicked={this.state.submitClickedCMV}></Results>
+                    }
                 </div>
-              </StickyContainer>
-            </div>
+                </StickyContainer>
+              </div>
+              :
+              <div>
+                <StickyContainer>
+                  <Sticky>{({ style }) => <div style={{ zIndex: '1', position: 'absolute', right: '10vw' }} ><button style={style} onClick={this.handleSubmit.bind(this, "HSV")} className="btn btn-primary" type="submit">Back to Saved Sequences</button></div>}</Sticky>
+                  <div>
+                    <p>{this.state.mutation_list}</p>
+                    <HSVResults user={this.props.user} virus={"HSV-2"} saveButton={false} selecteddrugs={this.state.hsvdrugs} epistasis={[]} selectedThymidine={this.state.analyzeid.tk23} selectedPolymerase={this.state.analyzeid.poly30} isClicked={this.state.submitClickedHSV}></HSVResults>
+                    }
+                </div>
+                </StickyContainer>
+              </div>
+            )
             :
             <div>
               <h2 className="pageheader">
                 File Library
-      </h2>
+              </h2>
               {this.props.user != 0 ?
                 <div>
                   <p>{this.props.user.email}'s Library</p>
@@ -577,6 +645,33 @@ class SavedSequences extends Component {
                 </div>
               }
               <input type="text" className="input" onChange={(this.handleFilterChange)} placeholder="Search..." />
+              <FormControlLabel style={{ marginLeft: "2vw" }}
+                control={
+                  <Switch
+                    checked={this.state.cmvfil}
+                    onChange={this.filterCMV}
+                  />
+                }
+                label="Filter for CMV"
+              />
+              <FormControlLabel style={{}}
+                control={
+                  <Switch
+                    checked={this.state.hsv1fil}
+                    onChange={this.filterHSV1}
+                  />
+                }
+                label="Filter for HSV-1"
+              />
+              <FormControlLabel style={{}}
+                control={
+                  <Switch
+                    checked={this.state.hsv2fil}
+                    onChange={this.filterHSV2}
+                  />
+                }
+                label="Filter for HSV-2"
+              />
               <div style={{ background: '#cbefec', border: '1px solid #009688', padding: '1rem', borderRadius: '5px', marginBottom: '1rem' }}>
                 <div>
                   {this.state.loading === false ?
@@ -668,7 +763,7 @@ class FileCardComplete extends Component {
       let phos = '';
       let poly = '';
       let term = '';
-      if (item.phos97 !== undefined && item.phos97 !== 0) {
+      if (item.phos97 !== undefined && item.phos97.length !== 0) {
         item.phos97.map(item => {
           phos += item.Variant + ' ';
         })
@@ -683,9 +778,8 @@ class FileCardComplete extends Component {
         variants.push(<div><strong>Terminase: </strong> {term}</div>)
       } else {
         item.term56 = [];
-        console.log(item.term56)
       }
-      if (item.poly54 !== undefined && item.poly54 !== 0) {
+      if (item.poly54 !== undefined && item.poly54.length !== 0) {
         item.poly54.map(item => {
           poly += item.Variant + ' ';
         })
@@ -693,6 +787,26 @@ class FileCardComplete extends Component {
       } else {
         item.poly54 = [];
       }
+    } else {
+      let tk = '';
+      let poly = '';
+      if (item.tk23 !== undefined && item.tk23.length !== 0) {
+        item.tk23.map(item => {
+          tk += item.Variant + ' ';
+        })
+        variants.push(<div><strong>Thymidine Kinase: </strong> {tk}</div>)
+      } else {
+        item.tk23 = [];
+      }
+      if (item.poly30 !== undefined && item.poly30.length !== 0) {
+        item.poly30.map(item => {
+          poly += item.Variant + ' ';
+        })
+        variants.push(<div><strong>Polymerase: </strong> {poly}</div>)
+      } else {
+        item.poly30 = [];
+      }
+
     }
     return (
       <Card style={{ margin: '5px' }}>
@@ -769,6 +883,8 @@ class HSV2FileInput extends Component {
       loaded: false,
       ul23filename: 'Choose file',
       ul30filename: 'Choose file',
+      txt30: '',
+      txt23: ''
     }
   }
 
@@ -1013,27 +1129,36 @@ class HSV2FileInput extends Component {
 
   clearTextArea = gene => {
     if (gene === 'hsv2tk') {
-      this.setState({ txt23: '' });
+      this.setState({ txt23: '', ul23filename: 'Choose file' });
     } else if (gene === 'hsv2pol') {
-      this.setState({ txt30: '' });
+      this.setState({ txt30: '', ul30filename: 'Choose file' });
     }
   }
 
 
   render() {
     var descriptionTool = <p>Choose an AB1 or FASTA file from your computer.<br /> Once a suitable alignment appears in the textbox below, click analyze.</p>;
+    let invalid23 = false;
+    if (this.state.txt23.trim() === '') {
+      invalid23 = true;
+    }
+    let invalid30 = false;
+    if (this.state.txt30.trim() === '') {
+      invalid30 = true;
+    }
     if (this.state.loaded) {
       return (
         <div className="container">
           {
             this.state.submitClicked ?
               <div>
-                <div>
-                  <p>{this.state.mutation_list}</p>
-                  {/* <Results selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results> */}
-                  <HSVResults selecteddrugs={this.state.selecteddrugs} epistasis={[]} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
-                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
-                </div>
+                <StickyContainer>
+                  <Sticky>{({ style }) => <div style={{ zIndex: '1', position: 'absolute', right: '10vw' }} ><button style={style} onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Resubmit</button></div>}</Sticky>
+                  <div>
+                    <p>{this.state.mutation_list}</p>
+                    <HSVResults user={this.props.user} virus={"HSV-2"} saveButton={true} selecteddrugs={this.state.selecteddrugs} epistasis={[]} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
+                  </div>
+                </StickyContainer>
               </div>
               :
               <div>
@@ -1063,6 +1188,9 @@ class HSV2FileInput extends Component {
                       {this.state.ul23filename}
                     </label>
                   </div>
+                  {/* <div className="input-group-prepend">
+                    <button className="input-group-text" id="inputGroupFileAddon01">Remove</button>
+                  </div> */}
                 </div>
                 {/* <input label='upload file' type='file' onChange={this.submitFile('hsv1tk')} /> */}
                 {/* <textarea value={this.state.txt54} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea> */}
@@ -1073,7 +1201,7 @@ class HSV2FileInput extends Component {
                   <textarea value={this.state.txt23} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL23 FASTA Text Input" onChange={this.updateInput56}></textarea>
                 </div>
 
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL23</button>
+                <button disabled={invalid23} onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL23</button>
 
                 <h3 className='FileInput-headers' style={{ display: 'inline-block' }}><strong>UL30 - DNA Polymerase</strong></h3>
                 <Tooltip
@@ -1106,7 +1234,7 @@ class HSV2FileInput extends Component {
                   </button>
                   <textarea value={this.state.txt30} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL30 FASTA Text Input" onChange={this.updateInput97}></textarea>
                 </div>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL30</button>
+                <button disabled={invalid30} onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL30</button>
                 <ToastContainer />
               </div>
           }
@@ -1141,6 +1269,8 @@ class HSV1FileInput extends Component {
       loaded: false,
       ul23filename: 'Choose file',
       ul30filename: 'Choose file',
+      txt23: '',
+      txt30: ''
     }
   }
 
@@ -1248,6 +1378,7 @@ class HSV1FileInput extends Component {
   updateInput23(event) {
     this.setState({ input: event.target.value })
     this.setState({ txt23: event.target.value })
+    console.log(event.target.value)
     let tkstate = [];
     let fasta_sequence = event.target.value;
     for (let i = 0; i < this.state.tk.length; i++) {
@@ -1287,7 +1418,8 @@ class HSV1FileInput extends Component {
   }
 
   updateInput30(event) {
-    this.setState({ input: event.target.value })
+    this.setState({ input: event.target.value });
+    this.setState({ txt30: event.target.value });
     let polstate = [];
     let fasta_sequence = event.target.value;
     for (let i = 0; i < this.state.poly.length; i++) {
@@ -1404,15 +1536,23 @@ class HSV1FileInput extends Component {
 
   clearTextArea = gene => {
     if (gene === 'hsv1tk') {
-      this.setState({ txt23: '' });
+      this.setState({ txt23: '', ul23filename: 'Choose file' });
     } else if (gene === 'hsv1pol') {
-      this.setState({ txt30: '' });
+      this.setState({ txt30: '', ul30filename: 'Choose file' });
     }
   }
 
 
   render() {
     var descriptionTool = <p>Choose an AB1 or FASTA file from your computer.<br /> Once a suitable alignment appears in the textbox below, click analyze.</p>;
+    let invalid23 = false;
+    if (this.state.txt23.trim() === '') {
+      invalid23 = true;
+    }
+    let invalid30 = false;
+    if (this.state.txt30.trim() === '') {
+      invalid30 = true;
+    }
     if (this.state.loaded) {
       return (
         <div className="container">
@@ -1420,10 +1560,17 @@ class HSV1FileInput extends Component {
             this.state.submitClicked ?
               <div>
                 <div>
+
+                  <StickyContainer>
+                    <Sticky>{({ style }) => <div style={{ zIndex: '1', position: 'absolute', right: '10vw' }} ><button style={style} onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Resubmit</button></div>}</Sticky>
+                    <div>
+                      <p>{this.state.mutation_list}</p>
+                      <HSVResults user={this.props.user} virus={"HSV-1"} saveButton={true} selecteddrugs={this.state.selecteddrugs} epistasis={[]} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
+                    </div>
+                  </StickyContainer>
                   <p>{this.state.mutation_list}</p>
-                  {/* <Results selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results> */}
-                  <HSVResults selecteddrugs={this.state.selecteddrugs} epistasis={[]} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
-                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                  {/* <HSVResults saveButton={true} selecteddrugs={this.state.selecteddrugs} epistasis={[]} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
+                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button> */}
                 </div>
               </div>
               :
@@ -1464,7 +1611,7 @@ class HSV1FileInput extends Component {
                   <textarea value={this.state.txt23} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="U23 FASTA Text Input" onChange={this.updateInput23}></textarea>
                 </div>
 
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL23</button>
+                <button disabled={invalid23} onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL23</button>
 
                 <h3 className='FileInput-headers' style={{ display: 'inline-block' }}><strong>UL30 - DNA Polymerase</strong></h3>
                 <Tooltip
@@ -1497,7 +1644,7 @@ class HSV1FileInput extends Component {
                   </button>
                   <textarea value={this.state.txt30} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL30 FASTA Text Input" onChange={this.updateInput30}></textarea>
                 </div>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL30</button>
+                <button disabled={invalid30} onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL30</button>
                 <ToastContainer />
               </div>
           }
@@ -1536,7 +1683,9 @@ class CMVFileInput extends Component {
       ul54filename: 'Choose file',
       ul56filename: 'Choose file',
       ul97filename: 'Choose file',
-
+      txt54: '',
+      txt56: '',
+      txt97: ''
     }
   }
 
@@ -1637,7 +1786,8 @@ class CMVFileInput extends Component {
 
   updateInput54(event) {
     this.setState({ input: event.target.value })
-    console.log(event)
+    this.setState({ txt54: event.target.value })
+    console.log(event.target.value)
     let polystate = [];
     let fasta_sequence = event.target.value;
     for (let i = 0; i < this.state.poly.length; i++) {
@@ -1730,6 +1880,7 @@ class CMVFileInput extends Component {
 
   updateInput56(event) {
     this.setState({ input: event.target.value })
+    this.setState({ txt56: event.target.value })
     let termstate = [];
     let fasta_sequence = event.target.value;
     for (let i = 0; i < this.state.term.length; i++) {
@@ -1851,16 +2002,28 @@ class CMVFileInput extends Component {
 
   clearTextArea = gene => {
     if (gene === 'cmvphos') {
-      this.setState({ txt97: '' });
+      this.setState({ txt97: '', ul97filename: 'Choose file' });
     } else if (gene === 'cmvterm') {
-      this.setState({ txt56: '' });
+      this.setState({ txt56: '', ul56filename: 'Choose file' });
     } else if (gene === 'cmvpol') {
-      this.setState({ txt54: '' });
+      this.setState({ txt54: '', ul54filename: 'Choose file' });
     }
   }
 
   render() {
     var descriptionTool = <p>Choose an AB1 or FASTA file from your computer.<br /> Once a suitable alignment appears in the textbox below, click analyze.</p>;
+    let invalid54 = false;
+    if (this.state.txt54.trim() === '') {
+      invalid54 = true;
+    }
+    let invalid56 = false;
+    if (this.state.txt56.trim() === '') {
+      invalid56 = true;
+    }
+    let invalid97 = false;
+    if (this.state.txt97.trim() === '') {
+      invalid97 = true;
+    }
     if (this.state.loaded) {
       return (
         <div className="container">
@@ -1868,9 +2031,16 @@ class CMVFileInput extends Component {
             this.state.submitClicked ?
               <div>
                 <div>
+                  <StickyContainer>
+                    <Sticky>{({ style }) => <div style={{ zIndex: '1', position: 'absolute', right: '10vw' }} ><button style={style} onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Back to Saved Sequences</button></div>}</Sticky>
+                    <div>
+                      <p>{this.state.mutation_list}</p>
+                      <Results saveButton={true} user={this.props.user} selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                    </div>
+                  </StickyContainer>
                   <p>{this.state.mutation_list}</p>
-                  <Results user={this.props.user} selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
-                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                  {/* <Results saveButton={true} user={this.props.user} selecteddrugs={this.state.selecteddrugs} epistasis={[]} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button> */}
                 </div>
               </div>
               :
@@ -1914,7 +2084,7 @@ class CMVFileInput extends Component {
                   </button>
                   <textarea value={this.state.txt54} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL54 FASTA Text Input" onChange={this.updateInput54}></textarea>
                 </div>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL54</button>
+                <button disabled={invalid54} onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL54</button>
 
                 <h3 style={{ display: 'inline-block' }} className='FileInput-headers'><strong>UL56 - Terminase</strong></h3>
                 <Tooltip
@@ -1949,7 +2119,7 @@ class CMVFileInput extends Component {
                   <textarea value={this.state.txt56} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL56 FASTA Text Input" onChange={this.updateInput56}></textarea>
                 </div>
 
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL56</button>
+                <button disabled={invalid56} onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL56</button>
 
                 <h3 className='FileInput-headers' style={{ display: 'inline-block' }}><strong>UL97 - Phosphotransferase</strong></h3>
                 <Tooltip
@@ -1982,7 +2152,7 @@ class CMVFileInput extends Component {
                   </button>
                   <textarea value={this.state.txt97} className="form-control z-depth-1" id="exampleFormControlTextarea6" rows="6" placeholder="UL97 FASTA Text Input" onChange={this.updateInput97}></textarea>
                 </div>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL97</button>
+                <button disabled={invalid97} onClick={this.handleSubmit.bind(this)} className="btn btn-primary fileSubmit" type="submit">Analyze UL97</button>
                 <ToastContainer />
               </div>
           }
@@ -2165,8 +2335,15 @@ class HSV1db extends Component {
           {
             this.state.submitClicked ?
               <div>
-                <HSVResults selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                <StickyContainer>
+                  <Sticky>{({ style }) => <div style={{ zIndex: '1', position: 'absolute', right: '10vw' }} ><button style={style} onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Back to Saved Sequences</button></div>}</Sticky>
+                  <div>
+                    <p>{this.state.mutation_list}</p>
+                    <HSVResults virus={"HSV-1"} user={this.props.user} saveButton={true} selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
+                  </div>
+                </StickyContainer>
+                {/* <HSVResults saveButton={true} selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase}></HSVResults>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button> */}
               </div>
               :
               <div>
@@ -2354,8 +2531,15 @@ class HSV2db extends Component {
           {
             this.state.submitClicked ?
               <div>
-                <HSVResults selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase} isClicked={this.state.submitClicked}></HSVResults>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                <StickyContainer>
+                  <Sticky>{({ style }) => <div style={{ zIndex: '1', position: 'absolute', right: '10vw' }} ><button style={style} onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Back to Saved Sequences</button></div>}</Sticky>
+                  <div>
+                    <p>{this.state.mutation_list}</p>
+                    <HSVResults virus={"HSV-2"} saveButton={true} user={this.props.user} selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase} isClicked={this.state.submitClicked}></HSVResults>
+                  </div>
+                </StickyContainer>
+                {/* <HSVResults saveButton={true} selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selectedThymidine={this.state.selectedThymidine} selectedPolymerase={this.state.selectedPolymerase} isClicked={this.state.submitClicked}></HSVResults>
+                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button> */}
               </div>
               :
               <div>
@@ -2583,8 +2767,15 @@ class CMVdb extends Component {
             this.state.submitClicked ?
               <div>
                 <div>
-                  <Results user={this.props.user} selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
-                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button>
+                  <StickyContainer>
+                    <Sticky>{({ style }) => <div style={{ zIndex: '1', position: 'absolute', right: '10vw' }} ><button style={style} onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Back to Saved Sequences</button></div>}</Sticky>
+                    <div>
+                      <p>{this.state.mutation_list}</p>
+                      <Results saveButton={true} user={this.props.user} selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                    </div>
+                  </StickyContainer>
+                  {/* <Results saveButton={true} user={this.props.user} selecteddrugs={this.state.selecteddrugs} epistasis={this.state.epistasis} selected97phos={this.state.selected97phos} selected54poly={this.state.selected54poly} selected56term={this.state.selected56term} isClicked={this.state.submitClicked}></Results>
+                  <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Reset</button> */}
                 </div>
               </div>
               :
@@ -2659,6 +2850,7 @@ class Results extends Component {
     if (selected56term !== undefined && selected56term.length !== 0) {
       headers.push("UL56 Terminase")
     }
+
     var variants = this.state.selected54poly.concat(this.state.selected56term);
     variants = variants.concat(this.state.selected97phos)
     for (let i = 0; i < this.state.epistasis.length; i++) {
@@ -2714,6 +2906,7 @@ class Results extends Component {
         }
       }
     }
+    console.log(folddata)
     this.setState({ foldobj: folddata })
     var columns54 = ["Variant"]
     for (let i = 0; i < selected54poly.length; i++) {
@@ -2815,166 +3008,180 @@ class Results extends Component {
     return (
       <div>
         <div>
-          {foldtotal === 0 ?
+          {this.props.selecteddrugs[0] === "fold" ?
             <div>
               <h1 className="pageheader">Results:</h1>
               <h2 style={{ textDecoration: 'underline' }}>Drug Resistance Profile</h2>
               <p>Fold change by drug</p>
               <div className="drugProfile">
                 <p style={{ "color": "red", "fontWeight": "bold" }}>
-                  No fold data available for the selected drugs:
-              {
-                    this.props.selecteddrugs.map(function (drug, i) {
-                      return <li key={i}>{drug.replace("fold", "").slice(0, 1).toUpperCase()
-                        + drug.replace("fold", "").slice(1, drug.replace("fold", "").length)}</li>
-                    }
-                    )}
+                  No drugs selected.
                 </p>
               </div>
             </div>
             :
-            <div>
-              <h1 className="pageheader" style={{ display: 'block', borderBottom: 'none' }}>Results:</h1>
-              <h2 style={{ textDecoration: 'underline', display: 'inline-block' }}>Drug Resistance Profile</h2>
-              {this.props.user === '' ?
-                <div style={{ display: 'inline' }}>
-                  <button style={{ padding: '5px', display: 'inline', margin: '0px 0px 0px 10px' }} disabled className="btn btn-success">
-                    Log in to Save
-              <i style={{ marginLeft: '5px' }} className="fa fa-save"></i>
-                  </button>
+            (foldtotal === 0 ?
+              <div>
+                <h1 className="pageheader">Results:</h1>
+                <h2 style={{ textDecoration: 'underline' }}>Drug Resistance Profile</h2>
+                <p>Fold change by drug</p>
+                <div className="drugProfile">
+                  <p style={{ "color": "red", "fontWeight": "bold" }}>
+                    No fold data available for the selected drugs:
+              {
+                      this.props.selecteddrugs.map(function (drug, i) {
+                        return <li key={i}>{drug.replace("fold", "").slice(0, 1).toUpperCase()
+                          + drug.replace("fold", "").slice(1, drug.replace("fold", "").length)}</li>
+                      }
+                      )}
+                  </p>
                 </div>
-                :
-                <div style={{ display: 'inline' }}>
-                  {this.state.saved === false ?
-                    <button style={{ padding: '5px', display: 'inline', margin: '0px 0px 0px 10px' }} onClick={this.openModal} className="btn btn-success">
-                      Save to Profile
+              </div>
+              :
+              <div>
+                <h1 className="pageheader" style={{ display: 'block', borderBottom: 'none' }}>Results:</h1>
+                <h2 style={{ textDecoration: 'underline', display: 'inline-block' }}>Drug Resistance Profile</h2>
+                {this.props.user === '' ?
+                  <div style={{ display: 'inline' }}>
+                    <button style={{ padding: '5px', display: 'inline', margin: '0px 0px 0px 10px' }} disabled className="btn btn-success">
+                      Log in to Save
               <i style={{ marginLeft: '5px' }} className="fa fa-save"></i>
                     </button>
-                    :
-                    <div style={{ color: 'green', display: 'inline', margin: '0px 0px 0px 10px' }}>
-                      <strong>Saved</strong>
-                      <i style={{ marginLeft: '5px' }} className="fa fa-check" aria-hidden="true"></i>
-                    </div>
-                  }
+                  </div>
+                  :
+                  <div style={{ display: 'inline' }}>
+                    {this.props.saveButton === true ? (this.state.saved === false && this.props.saveButton === true ?
+                      <button style={{ padding: '5px', display: 'inline', margin: '0px 0px 0px 10px' }} onClick={this.openModal} className="btn btn-success">
+                        Save to Profile
+              <i style={{ marginLeft: '5px' }} className="fa fa-save"></i>
+                      </button>
+                      :
+                      <div style={{ color: 'green', display: 'inline', margin: '0px 0px 0px 10px' }}>
+                        <strong>Saved</strong>
+                        <i style={{ marginLeft: '5px' }} className="fa fa-check" aria-hidden="true"></i>
+                      </div>
+                    ) : <div></div>}
+
+                  </div>
+
+                }
+
+
+                <p>Fold change by drug</p>
+                <div className="drugProfile">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
+                        <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {
+                        folddata.map((drug) =>
+                          <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
+                      }
+                    </tbody>
+                  </table>
                 </div>
-
-              }
-
-
-              <p>Fold change by drug</p>
-              <div className="drugProfile">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
-                      <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {
-                      folddata.map((drug) =>
-                        <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
-                    }
-                  </tbody>
-                </table>
+                <div>
+                </div>
               </div>
-              <div>
-                <h2 style={{ textDecoration: 'underline' }}>Individual Variant Resistance</h2>
-                {
-                  this.state.selected54poly.length !== 0 ?
-                    <div>
-                      <h2>UL54 Polymerase</h2>
-                      <BootstrapTable data={this.state.selected54poly} bordered={false} striped hover exportCSV
-                      >
-                        <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='ganciclovirfold'>Ganciclovir-GCV (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-                        {/* <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
-                    <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn> */}
-                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
-                      </BootstrapTable>
-                    </div>
-                    :
-                    <div></div>
-                }
-                {
-                  this.state.selected56term.length !== 0 ?
-                    <div>
-                      <h2>UL56 Terminase</h2>
-                      <BootstrapTable data={this.state.selected56term} bordered={false} striped hover exportCSV>
-                        <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
-                        {/* <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
-                    <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn> */}
-                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
-                      </BootstrapTable>
-                    </div>
-                    :
-                    <div></div>
-                }
-                {
-                  this.state.selected97phos.length !== 0 ?
-                    <div>
-                      <h2>UL97 Phosphotransferase</h2>
-                      <BootstrapTable data={this.state.selected97phos} bordered={false} striped hover exportCSV>
-                        <TableHeaderColumn width='170' dataField='Variant' isKey>Variant</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='cidofovirfold'> Cidofovir (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
-                      </BootstrapTable>
-                    </div>
-                    :
-                    <div></div>
-                }
-                {
-                  this.state.selectedepistasis.length !== 0 ?
-                    <div>
-                      <h2>Epistatic Variants</h2>
-                      <BootstrapTable data={this.state.selectedepistasis} bordered={false} striped hover exportCSV>
-                        <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='Comments' dataFormat={activeFormatter}>Comments</TableHeaderColumn>
-                      </BootstrapTable>
-                    </div>
-                    :
-                    <div></div>
-                }
-                <Modal
-                  isOpen={this.state.modalIsOpen}
-                  onAfterOpen={this.afterOpenModal}
-                  onRequestClose={this.closeModal}
-                  style={customStyles}
-                  contentLabel="Example Modal"
-                >
-
-                  <h2 ref={subtitle => this.subtitle = subtitle}>Save Sequence Results</h2>
-                  <form>
-                    <TextField
-                      error={labeltaken}
-                      style={{ display: 'block', margin: '10px', marginRight: 0 }}
-                      className='form-group col-md6'
-                      name="todo"
-                      id="outlined-with-placeholder"
-                      label={labeltaken ? "Name In Use" : "Enter Save Name"}
-                      placeholder="Enter Save Name"
-                      margin="normal"
-                      variant="outlined"
-                      name="todo"
-                      value={this.state.saveName}
-                      onChange={this.onChangeSaveName}
-                    />
-                    <button className='btn btn-danger' onClick={this.closeModal}>Exit</button>
-                    <button className='btn btn-primary' disabled={invalid} onClick={this.closeModalSave}>Save</button>
-                  </form>
-                </Modal>
-              </div>
-            </div>
+            )
           }
+          <h2 style={{ textDecoration: 'underline' }}>Individual Variant Resistance</h2>
+          {
+            this.state.selected54poly.length !== 0 ?
+              <div>
+                <h2>UL54 Polymerase</h2>
+                <BootstrapTable data={this.state.selected54poly} bordered={false} striped hover exportCSV
+                >
+                  <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='ganciclovirfold'>Ganciclovir-GCV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                  {/* <TableHeaderColumn width='150' dataField='lobucavirfold'>Lobucavir-LBV (fold ratio)</TableHeaderColumn>
+                    <TableHeaderColumn width='150' dataField='adefovirfold'>Adefovir-ADV (fold ratio)</TableHeaderColumn> */}
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          {
+            this.state.selected56term.length !== 0 ?
+              <div>
+                <h2>UL56 Terminase</h2>
+                <BootstrapTable data={this.state.selected56term} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
+                  {/* <TableHeaderColumn width='150' dataField='tomeglovirfold'> Tomeglovir (fold ratio)</TableHeaderColumn>
+                    <TableHeaderColumn width='150' dataField='GW275175Xfold'> GW275175X (fold ratio)</TableHeaderColumn> */}
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          {
+            this.state.selected97phos.length !== 0 ?
+              <div>
+                <h2>UL97 Phosphotransferase</h2>
+                <BootstrapTable data={this.state.selected97phos} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='170' dataField='Variant' isKey>Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='ganciclovirfold'> Ganciclovir (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='cidofovirfold'> Cidofovir (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Comments'>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          {
+            this.state.selectedepistasis.length !== 0 ?
+              <div>
+                <h2>Epistatic Variants</h2>
+                <BootstrapTable data={this.state.selectedepistasis} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='170' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='letermovirfold'> Letermovir (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference'>Reference</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Comments' dataFormat={activeFormatter}>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          <Modal
+            isOpen={this.state.modalIsOpen}
+            onAfterOpen={this.afterOpenModal}
+            onRequestClose={this.closeModal}
+            style={customStyles}
+            contentLabel="Example Modal"
+          >
+
+            <h2 ref={subtitle => this.subtitle = subtitle}>Save Sequence Results</h2>
+            <form>
+              <TextField
+                error={labeltaken}
+                style={{ display: 'block', margin: '10px', marginRight: 0 }}
+                className='form-group col-md6'
+                name="todo"
+                id="outlined-with-placeholder"
+                label={labeltaken ? "Name In Use" : "Enter Save Name"}
+                placeholder="Enter Save Name"
+                margin="normal"
+                variant="outlined"
+                name="todo"
+                value={this.state.saveName}
+                onChange={this.onChangeSaveName}
+              />
+              <button className='btn btn-danger' onClick={this.closeModal}>Exit</button>
+              <button className='btn btn-primary' disabled={invalid} onClick={this.closeModalSave}>Save</button>
+            </form>
+          </Modal>
         </div>
       </div>
     )
@@ -2997,8 +3204,16 @@ class HSVResults extends Component {
       termvarreference: [],
       colheaders: ["Variant", "Reference", "Comments"],
       foldobj: [],
-      headers: []
+      headers: [],
+      modalIsOpen: false,
+      saved: false,
+      saveName: '',
+      savedItems: [],
     };
+    this.openModal = this.openModal.bind(this);
+    this.afterOpenModal = this.afterOpenModal.bind(this);
+    this.closeModal = this.closeModal.bind(this);
+    this.closeModalSave = this.closeModalSave.bind(this);
   }
 
   componentWillMount() {
@@ -3036,6 +3251,28 @@ class HSVResults extends Component {
       }
     }
     this.setState({ allvars: variants });
+    var variants = this.props.selectedThymidine.concat(this.props.selectedPolymerase);
+    var drugs = this.props.selecteddrugs;
+    var folddata = [];
+    console.log(variants)
+    for (let i = 0; i < drugs.length; i++) {
+      var drugobj = {};
+      let drug = drugs[i].replace('fold', '');
+      drugs[i] = drug + "fold";
+      drugobj["drug"] = drug + "fold";
+      drugobj["fold"] = 0;
+      folddata.push(drugobj)
+    }
+    for (let i = 0; i < variants.length; i++) {
+      for (let j = 0; j < folddata.length; j++) {
+        if (folddata[j].drug in variants[i]) {
+          if (typeof variants[i][folddata[j].drug] === 'number') {
+            folddata[j].fold = folddata[j].fold + Number(variants[i][folddata[j].drug]);
+          }
+        }
+      }
+    }
+    this.setState({ foldobj: folddata });
   }
 
   commentFormatter(enumObject) {
@@ -3057,131 +3294,316 @@ class HSVResults extends Component {
     }
   }
 
-  render() {
-    var variants = this.props.selectedThymidine.concat(this.props.selectedPolymerase);
-    var drugs = this.props.selecteddrugs;
-    var folddata = [];
-    for (let i = 0; i < drugs.length; i++) {
-      var drugobj = {};
-      let drug = drugs[i];
-      drugs[i] = drug + "fold";
-      drugobj["drug"] = drug + "fold";
-      drugobj["fold"] = 0;
-      folddata.push(drugobj)
-    }
-    for (let i = 0; i < variants.length; i++) {
-      for (let j = 0; j < folddata.length; j++) {
-        if (folddata[j].drug in variants[i]) {
-          if (typeof variants[i][folddata[j].drug] === 'number') {
-            folddata[j].fold = folddata[j].fold + Number(variants[i][folddata[j].drug]);
-          }
+  openModal() {
+    this.setState({ modalIsOpen: true });
+  }
+
+  afterOpenModal() {
+    // references are now sync'd and can be accessed.
+    this.subtitle.style.color = 'black';
+    this.subtitle.style.fontWeight = 'bold'
+  }
+
+  closeModal() {
+    this.setState({ modalIsOpen: false });
+  }
+
+  componentDidMount() {
+    if (this.props.user) {
+      let uid = this.props.user.uid
+      let ref = firebase.database().ref('users/' + uid);
+      let data = new Array();
+      ref.on('value', snapshot => {
+        const savedItems = snapshot.val();
+        if (savedItems !== null) {
+          Object.keys(savedItems).map(function (key, item) {
+            data.push(key)
+          })
+          this.setState({
+            savedItems: data,
+          });
         }
+      });
+    }
+  }
+
+  closeModalSave() {
+    var today = new Date();
+    var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    this.setState({ modalIsOpen: false, saved: true });
+    firebase.database().ref('users/' + this.props.user.uid + '/' + this.state.saveName).set({
+      name: this.state.saveName,
+      virus: this.props.virus,
+      poly30: this.state.selectedPolymerase,
+      tk23: this.state.selectedThymidine,
+      date: date,
+      time: time
+    });
+  }
+  onChangeSaveName = event => {
+    this.setState({ saveName: event.target.value });
+  }
+
+
+  render() {
+    let invalid = false;
+    if (this.state.saveName.trim() === '' || this.state.savedItems.includes(this.state.saveName)) {
+      invalid = true;
+    }
+    let labeltaken = false;
+    if (this.state.savedItems.includes(this.state.saveName)) {
+      labeltaken = true;
+    }
+    const customStyles = {
+      content: {
+        top: '50%',
+        left: '50%',
+        right: 'auto',
+        bottom: 'auto',
+        marginRight: '-50%',
+        transform: 'translate(-50%, -50%)'
       }
     }
-    var foldtotal = 0;
+    // var variants = this.props.selectedThymidine.concat(this.props.selectedPolymerase);
+    // var drugs = this.props.selecteddrugs;
+    // var folddata = [];
+    // console.log(variants)
+    // for (let i = 0; i < drugs.length; i++) {
+    //   var drugobj = {};
+    //   let drug = drugs[i];
+    //   drugs[i] = drug + "fold";
+    //   drugobj["drug"] = drug + "fold";
+    //   drugobj["fold"] = 0;
+    //   folddata.push(drugobj)
+    // }
+    // for (let i = 0; i < variants.length; i++) {
+    //   for (let j = 0; j < folddata.length; j++) {
+    //     if (folddata[j].drug in variants[i]) {
+    //       if (typeof variants[i][folddata[j].drug] === 'number') {
+    //         folddata[j].fold = folddata[j].fold + Number(variants[i][folddata[j].drug]);
+    //       }
+    //     }
+    //   }
+    // }
+    let folddata = this.state.foldobj;
+    let foldtotal = 0;
     for (let i = 0; i < folddata.length; i++) {
       foldtotal += folddata[i].fold
     }
-    console.log(this.state.selecteddrugs)
+    let virus = this.props.virus
     return (
       <div>
-        <h1 className="pageheader">Results:</h1>
-        <h2>Drug Resistance Profile</h2>
-        <p>Fold change by drug</p>
         <div>
-          {foldtotal === 0 ?
-            <div className="drugProfile">
-              <p style={{ "color": "red", "fontWeight": "bold" }}>
-                No fold data available for the selected drugs:
-              {
-                  this.props.selecteddrugs.map(function (drug, i) {
-                    return <li key={i}>{drug.replace("fold", "").slice(0, 1).toUpperCase()
-                      + drug.replace("fold", "").slice(1, drug.replace("fold", "").length)}</li>
-                  }
-                  )}
-              </p>
+          {this.props.selecteddrugs[0] === "fold" ?
+            <div>
+              <h1 className="pageheader">Results:</h1>
+              <h2 style={{ textDecoration: 'underline' }}>Drug Resistance Profile</h2>
+              <p>Fold change by drug</p>
+              <div className="drugProfile">
+                <p style={{ "color": "red", "fontWeight": "bold" }}>
+                  No drugs selected.
+                </p>
+              </div>
             </div>
             :
+            (foldtotal === 0 ?
+              <div>
+                <h1 className="pageheader">Results:</h1>
+                <h2 style={{ textDecoration: 'underline' }}>Drug Resistance Profile</h2>
+                <p>Fold change by drug</p>
+                <div className="drugProfile">
+                  <p style={{ "color": "red", "fontWeight": "bold" }}>
+                    No fold data available for the selected drugs:
+              {
+                      this.props.selecteddrugs.map(function (drug, i) {
+                        return <li key={i}>{drug.replace("fold", "").slice(0, 1).toUpperCase()
+                          + drug.replace("fold", "").slice(1, drug.replace("fold", "").length)}</li>
+                      }
+                      )}
+                  </p>
+                </div>
+              </div>
+              :
+              <div>
+                <h1 className="pageheader" style={{ display: 'block', borderBottom: 'none' }}>Results:</h1>
+                <h2 style={{ textDecoration: 'underline', display: 'inline-block' }}>Drug Resistance Profile</h2>
+                {this.props.user === '' ?
+                  <div style={{ display: 'inline' }}>
+                    <button style={{ padding: '5px', display: 'inline', margin: '0px 0px 0px 10px' }} disabled className="btn btn-success">
+                      Log in to Save
+              <i style={{ marginLeft: '5px' }} className="fa fa-save"></i>
+                    </button>
+                  </div>
+                  :
+                  <div style={{ display: 'inline' }}>
+                    {this.props.saveButton === true ? (this.state.saved === false && this.props.saveButton === true ?
+                      <button style={{ padding: '5px', display: 'inline', margin: '0px 0px 0px 10px' }} onClick={this.openModal} className="btn btn-success">
+                        Save to Profile
+              <i style={{ marginLeft: '5px' }} className="fa fa-save"></i>
+                      </button>
+                      :
+                      <div style={{ color: 'green', display: 'inline', margin: '0px 0px 0px 10px' }}>
+                        <strong>Saved</strong>
+                        <i style={{ marginLeft: '5px' }} className="fa fa-check" aria-hidden="true"></i>
+                      </div>
+                    ) : <div></div>}
+
+                  </div>
+
+                }
+                <p>Fold change by drug</p>
+                <div className="drugProfile">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
+                        <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {
+                        folddata.map((drug) =>
+                          <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  {/* <p>Fold change by drug</p>
+        <div>
+          {this.props.selecteddrugs[0] === "fold" ?
             <div>
               <div className="drugProfile">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
-                      <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {
-                      folddata.map((drug) =>
-                        <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
-                    }
-                  </tbody>
-                </table>
-              </div>
-
-              <hr />
-              <div style={{ display: 'block' }}>
-                <h2>Individual Variant Resistance</h2>
-                {
-                  this.state.selectedThymidine.length !== 0 ?
-                    <div>
-                      <h3>UL23 Thymidine Kinase</h3>
-                      <BootstrapTable data={this.state.selectedThymidine} bordered={false} striped hover exportCSV>
-                        <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
-                        <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
-                      </BootstrapTable>
-                    </div>
-                    :
-                    <div></div>
-                }
-                {
-                  this.state.selectedPolymerase.length !== 0 ?
-                    <div>
-                      <h3>UL30 Polymerase</h3>
-                      <BootstrapTable data={this.state.selectedPolymerase} bordered={false} striped hover exportCSV>
-                        <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
-                        <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
-                      </BootstrapTable>
-                    </div>
-                    :
-                    <div></div>
-                }
-                {
-                  this.state.selectedepistasis.length !== 0 ?
-                    <div>
-                      <h3>Epistatic Variants</h3>
-                      <BootstrapTable data={this.state.selectedepistasis} bordered={false} striped hover exportCSV>
-                        <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
-                        <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
-                        <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
-                      </BootstrapTable>
-                    </div>
-                    :
-                    <div></div>
-                }
+                <p style={{ "color": "red", "fontWeight": "bold" }}>
+                  No drugs selected.
+                </p>
               </div>
             </div>
+            :
+            (foldtotal === 0 ?
+              <div className="drugProfile">
+                <p style={{ "color": "red", "fontWeight": "bold" }}>
+                  No fold data available for the selected drugs:
+              {
+                    this.props.selecteddrugs.map(function (drug, i) {
+                      return <li key={i}>{drug.replace("fold", "").slice(0, 1).toUpperCase()
+                        + drug.replace("fold", "").slice(1, drug.replace("fold", "").length)}</li>
+                    }
+                    )}
+                </p>
+              </div>
+              :
+              <div>
+                <div className="drugProfile">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th align="center" valign="top" rowSpan="1" colSpan="1">Drug</th>
+                        <th align="center" valign="top" rowSpan="1" colSpan="1">Fold Ratio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {
+                        folddata.map((drug) =>
+                          <FoldCard key={drug.drug} obj={drug} drug={drug.drug} fold={drug.fold} />)
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+                <hr />
+                <div style={{ display: 'block' }}> */}
+                </div>
+              </div>
+            )
           }
+          <h2>Individual Variant Resistance</h2>
+          {
+            this.state.selectedThymidine.length !== 0 ?
+              <div>
+                <h3>UL23 Thymidine Kinase</h3>
+                <BootstrapTable data={this.state.selectedThymidine} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference (PMID)</TableHeaderColumn>
+                  <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          {
+            this.state.selectedPolymerase.length !== 0 ?
+              <div>
+                <h3>UL30 Polymerase</h3>
+                <BootstrapTable data={this.state.selectedPolymerase} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                  <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          {
+            this.state.selectedepistasis.length !== 0 ?
+              <div>
+                <h3>Epistatic Variants</h3>
+                <BootstrapTable data={this.state.selectedepistasis} bordered={false} striped hover exportCSV>
+                  <TableHeaderColumn width='130' dataField='Variant' isKey >Variant</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='aciclovirfold'> Aciclovir-ACV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='foscarnetfold'>Foscarnet-FOS/PFA (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='cidofovirfold'>Cidofovir-CDV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='brivudinfold'>Brivudinfold-BVDU (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='100' dataField='penciclovirfold'>Penciclovir-PCV (fold ratio)</TableHeaderColumn>
+                  <TableHeaderColumn width='150' dataField='Reference' dataFormat={activeFormatter}>Reference</TableHeaderColumn>
+                  <TableHeaderColumn width='200' dataField='Comments' dataFormat={this.commentFormatter}>Comments</TableHeaderColumn>
+                </BootstrapTable>
+              </div>
+              :
+              <div></div>
+          }
+          <Modal
+            isOpen={this.state.modalIsOpen}
+            onAfterOpen={this.afterOpenModal}
+            onRequestClose={this.closeModal}
+            style={customStyles}
+            contentLabel="Example Modal"
+          >
+
+            <h2 ref={subtitle => this.subtitle = subtitle}>Save Sequence Results</h2>
+            <form>
+              <TextField
+                error={labeltaken}
+                style={{ display: 'block', margin: '10px', marginRight: 0 }}
+                className='form-group col-md6'
+                name="todo"
+                id="outlined-with-placeholder"
+                label={labeltaken ? "Name In Use" : "Enter Save Name"}
+                placeholder="Enter Save Name"
+                margin="normal"
+                variant="outlined"
+                name="todo"
+                value={this.state.saveName}
+                onChange={this.onChangeSaveName}
+              />
+              <button className='btn btn-danger' onClick={this.closeModal}>Exit</button>
+              <button className='btn btn-primary' disabled={invalid} onClick={this.closeModalSave}>Save</button>
+            </form>
+          </Modal>
         </div>
       </div>
+
     )
   }
 }
@@ -3411,7 +3833,6 @@ class AddVariants extends Component {
 
 
   render() {
-    console.log(this.state.adefovir)
     return (
       <div className="container">
         <h3 className='pageheader'>Add Variants to the Database</h3>
@@ -3481,6 +3902,229 @@ class AddVariants extends Component {
   }
 }
 
+const INITIAL_STATE = {
+  passwordOne: '',
+  passwordTwo: '',
+  errorCur: null,
+  errorChange: null,
+  passworCur: '',
+};
+
+class PasswordChangeForm extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = { ...INITIAL_STATE };
+  }
+
+  reauthenticate = (currentPassword) => {
+    var user = firebase.auth().currentUser;
+    var cred = firebase.auth.EmailAuthProvider.credential(
+      user.email, currentPassword);
+    return user.reauthenticateWithCredential(cred);
+  }
+
+  onSubmit = event => {
+    event.preventDefault();
+    console.log(this.state.passwordCur)
+    this.reauthenticate(this.state.passwordCur).then(() => {
+      var user = firebase.auth().currentUser;
+      user.updatePassword(this.state.passwordTwo).then(() => {
+        this.setState({ ...INITIAL_STATE });
+        toast.success("Password updated!", {
+          toastId: 13,
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }).catch((error) => {
+        this.setState({ errorChange: error.message })
+        toast.error(error.message, {
+          toastId: 13,
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });;
+      });
+    }).catch((error) => {
+      this.setState({ errorCur: error.message });
+      toast.error(error.message, {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    });
+  }
+
+  onChange = event => {
+    this.setState({ [event.target.name]: event.target.value });
+  };
+
+  render() {
+    const { passwordOne, passwordTwo, error, passwordCur } = this.state;
+
+    const isInvalid =
+      passwordOne !== passwordTwo || passwordOne === '';
+    console.log(this.props.user)
+    return (
+      <div className="container">
+        <h3 className='pageheader'>Change your password</h3>
+        <MDBContainer>
+          <MDBRow>
+            <MDBCol md="6">
+              <form onSubmit={this.onSubmit}>
+                <p className="h4 mb-4">Account Email: {this.props.user.email}</p>
+                <label htmlFor="defaultFormLoginPasswordEx" className="grey-text">
+                  Your current password
+                </label>
+                <input
+                  name="passwordCur"
+                  value={passwordCur}
+                  onChange={this.onChange}
+                  placeholder="Current Password"
+                  type="password"
+                  className="form-control"
+                />
+                <br />
+                <label htmlFor="defaultFormLoginPasswordEx" className="grey-text">
+                  Your new password
+                </label>
+                <input
+                  name="passwordOne"
+                  value={passwordOne}
+                  onChange={this.onChange}
+                  type="password"
+                  placeholder="New Password"
+                  type="password"
+                  className="form-control"
+                />
+                <br />
+                <label htmlFor="defaultFormLoginPasswordEx" className="grey-text">
+                  Your new password
+                </label>
+                <input
+                  name="passwordTwo"
+                  value={passwordTwo}
+                  onChange={this.onChange}
+                  type="password"
+                  placeholder="Confirm New Password"
+                  type="password"
+                  className="form-control"
+                />
+                <div className="mt-4">
+                  <MDBBtn disabled={isInvalid} color="indigo" type="submit">Change Password</MDBBtn>
+                </div>
+              </form>
+              <ToastContainer />
+            </MDBCol>
+          </MDBRow>
+        </MDBContainer>
+      </div>
+    );
+  }
+}
+
+
+class PasswordForgetFormBase extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = { ...INITIAL_STATE };
+  }
+
+  onSubmit = event => {
+    event.preventDefault();
+    const { email } = this.state;
+    if (email === undefined) {
+      toast.error("No email provided", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+    firebase.auth().sendPasswordResetEmail(email)
+      .then(() => {
+        this.setState({ ...INITIAL_STATE });
+        toast.success("Password reset email sent to " + email + "!", {
+          toastId: 13,
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      })
+      .catch(error => {
+        toast.error(error.message, {
+          toastId: 13,
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        this.setState({ error });
+      });
+
+    event.preventDefault();
+  };
+
+  onChange = event => {
+    this.setState({ [event.target.name]: event.target.value });
+  };
+
+  render() {
+    const { email, error } = this.state;
+
+    const isInvalid = email === '';
+
+    return (
+      <div className="container">
+        <h3 className="pageheader">Password Reset Request</h3>
+        <MDBContainer>
+          <form onSubmit={this.onSubmit}>
+            <label htmlFor="defaultFormLoginEmailEx" className="grey-text">
+              Your email
+            </label>
+            <input
+              name="email"
+              value={this.state.email}
+              onChange={this.onChange}
+              type="text"
+              placeholder="Email Address"
+              type="email"
+              className="form-control"
+            />
+            <div className="text-center mt-4">
+              <MDBBtn disabled={isInvalid} color="indigo" type="submit">Email Reset</MDBBtn>
+              <Link to={"/login"}>
+                <MDBBtn color="unique" type="submit">Back to Login</MDBBtn>
+              </Link>
+            </div>
+          </form>
+          <ToastContainer />
+        </MDBContainer>
+      </div>
+    );
+  }
+}
+
 class Login extends Component {
   constructor(props) {
     super(props);
@@ -3514,32 +4158,40 @@ class Login extends Component {
   }
 
   //Function that signs user up and stores their data in firebase
-  handleSignUp() {
+  // handleSignUp() {
 
-    /* Create a new user and save their information */
-    if (this.state.code === 'UW206') {
-      firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.password)
-        .then(firebaseUser => {
-          //include information (for app-level content)
-          let profilePromise = firebaseUser.updateProfile({
-            displayName: this.state.email,
-          }); //return promise for chaining
+  //   /* Create a new user and save their information */
+  //   if (this.state.code === 'UW206') {
+  //     firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.password)
+  //       .then(firebaseUser => {
+  //         //include information (for app-level content)
+  //         let profilePromise = firebaseUser.updateProfile({
+  //           displayName: this.state.email,
+  //         }); //return promise for chaining
 
-          return profilePromise;
-        })
-        .then(firebaseUser => {
-          this.setState({
-            user: firebase.auth().currentUser
-          })
-        })
-        .catch((err) => {
-          console.log(err);
-          this.setState({ errorMessage: err.message })
-        })
-    } else {
-      this.setState({ errorMessage: "Incorrect sign up code" })
-    }
-  }
+  //         return profilePromise;
+  //       })
+  //       .then(firebaseUser => {
+  //         this.setState({
+  //           user: firebase.auth().currentUser
+  //         })
+  //       })
+  //       .catch((err) => {
+  //         toast.error(err.message, {
+  //           toastId: 13,
+  //           position: "top-right",
+  //           autoClose: 5000,
+  //           hideProgressBar: false,
+  //           closeOnClick: true,
+  //           pauseOnHover: true,
+  //           draggable: true,
+  //         });
+  //         this.setState({ errorMessage: err.message })
+  //       })
+  //   } else {
+  //     this.setState({ errorMessage: "Incorrect sign up code" })
+  //   }
+  // }
 
 
   handleSignIn() {
@@ -3551,9 +4203,27 @@ class Login extends Component {
         this.setState({
           user: user
         })
+        toast.success("Logged in", {
+          toastId: 13,
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        this.props.history.push("/WelcomePage");
       })
       .catch((err) => {
-        console.log(err.message)
+        toast.error(err.message, {
+          toastId: 13,
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
         this.setState({ errorMessage: err.message })
       });
   }
@@ -3598,22 +4268,192 @@ class Login extends Component {
         </div>
 
         <div className="form-group">
-          <label>Sign Up Code (Ignore if signing in): </label>
-          <input type="code" className="form-control"
-            name="code"
-            value={this.state.code}
-            onChange={(event) => { this.handleChange(event) }}
-          />
-        </div>
-
-        <div className="form-group">
-          <button className="btn btn-primary mr-2" onClick={() => this.handleSignUp()}>
-            Sign Up
-                 </button>
           <button className="btn btn-success mr-2" onClick={() => this.handleSignIn()}>
             Sign In
                 </button>
         </div>
+        <p>
+          <Link to={"/PasswordForget"}>Forgot Password?</Link>
+        </p>
+        <p>
+          Don't have an account? <Link to={"/SignUp"}>Sign Up</Link>
+        </p>
+        <ToastContainer />
+      </div>
+    );
+  }
+}
+
+const SIGN_UP_INITIAL_STATE = {
+  username: '',
+  email: '',
+  passwordOne: '',
+  passwordTwo: '',
+  error: null,
+  code: '',
+};
+
+class SignUpFormBase extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = { ...SIGN_UP_INITIAL_STATE };
+  }
+
+  onSubmit = event => {
+    event.preventDefault();
+    /* Create a new user and save their information */
+    if (this.state.code === 'UW206') {
+      firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.passwordOne)
+        .then(firebaseUser => {
+          //include information (for app-level content)
+          // let profilePromise = firebaseUser.updateProfile({
+          //   displayName: this.state.email,
+          // }); //return promise for chaining
+          toast.success("Account Created", {
+            toastId: 13,
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+          // return profilePromise;
+        })
+        .then(firebaseUser => {
+          this.setState({
+            user: firebase.auth().currentUser
+          })
+        })
+        .catch((err) => {
+          toast.error(err.message, {
+            toastId: 13,
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+          this.setState({ errorMessage: err.message })
+        })
+    } else {
+      toast.error("Incorrect sign up code", {
+        toastId: 13,
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      this.setState({ errorMessage: "Incorrect sign up code" })
+    }
+  }
+
+  onChange = event => {
+    this.setState({ [event.target.name]: event.target.value });
+  };
+
+  render() {
+    const {
+      username,
+      email,
+      passwordOne,
+      passwordTwo,
+      error,
+      code
+    } = this.state;
+
+    const isInvalid =
+      passwordOne !== passwordTwo ||
+      passwordOne === '' ||
+      email === '';
+
+    return (
+      <div className="container">
+        <h3 className="pageheader">Sign up</h3>
+        <form onSubmit={this.onSubmit}>
+          <label htmlFor="defaultFormRegisterNameEx" className="grey-text">
+            Sign up code
+                </label>
+          <input
+            name="code"
+            value={code}
+            onChange={this.onChange}
+            type="text"
+            placeholder="Sign up code"
+            className="form-control"
+          />
+          <br />
+          <label htmlFor="defaultFormRegisterNameEx" className="grey-text">
+            Your name
+                </label>
+          <input
+            name="username"
+            value={username}
+            onChange={this.onChange}
+            type="text"
+            placeholder="Full Name"
+            className="form-control"
+          />
+          <br />
+          <label htmlFor="defaultFormRegisterEmailEx" className="grey-text">
+            Your email
+                </label>
+          <input
+            name="email"
+            value={email}
+            onChange={this.onChange}
+            type="text"
+            placeholder="Email Address"
+            type="email"
+            className="form-control"
+          />
+          <br />
+          <label
+            htmlFor="defaultFormRegisterPasswordEx"
+            className="grey-text"
+          >
+            Your password
+                </label>
+          <input
+            name="passwordOne"
+            value={passwordOne}
+            onChange={this.onChange}
+            type="password"
+            placeholder="Password"
+            type="password"
+            className="form-control"
+          />
+          <br />
+          <label
+            htmlFor="defaultFormRegisterPasswordEx"
+            className="grey-text"
+          >
+            Confirm password
+                </label>
+          <input
+            name="passwordTwo"
+            value={passwordTwo}
+            onChange={this.onChange}
+            type="password"
+            placeholder="Confirm Password"
+            type="password"
+            className="form-control"
+          />
+          <div className="text-center mt-4">
+            <MDBBtn color="indigo" disabled={isInvalid} type="submit">
+              Register
+                  </MDBBtn>
+            <Link style={{ color: "white" }} to={"/login"}>
+              <MDBBtn color="unique">Back to log in</MDBBtn>
+            </Link>
+          </div>
+          {error && <p>{error.message}</p>}
+        </form>
+        <ToastContainer />
       </div>
     );
   }
