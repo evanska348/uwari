@@ -40,6 +40,7 @@ import { MDBContainer, MDBRow, MDBCol, MDBBtn } from 'mdbreact';
 import { Redirect, Link } from 'react-router-dom'
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Switch from '@material-ui/core/Switch';
+import ReactLoading from 'react-loading';
 
 var config = {
   apiKey: "AIzaSyBGflsX38vQ4SVYcsPDXySUmIWZFnbIwao",
@@ -2364,6 +2365,7 @@ class HSV1db extends Component {
       return (
         <div className="loaderContainer">
           <div className="loader"></div>
+          {/* <ReactLoading type={"spin"} color={"#009688"} height={'10%'} width={'10%'} /> */}
         </div>
       )
     }
@@ -2760,6 +2762,9 @@ class CMVdb extends Component {
   }
 
   render() {
+    const { selected54poly, selected97phos, selected56term } = this.state
+    let isInvalid = selected54poly === [] && selected56term === [] && selected97phos === [];
+    console.log(selected54poly + selected56term + selected97phos)
     if (this.state.loaded) {
       return (
         <div className="container" >
@@ -2790,7 +2795,7 @@ class CMVdb extends Component {
                 <MultiVarianceSelectField changeSelection={this.onChangeSelection56term.bind(this)} input={this.state.term}></MultiVarianceSelectField>
                 <h3><strong>UL97 - Phosphotransferase</strong></h3>
                 <MultiVarianceSelectField changeSelection={this.onChangeSelection97phos.bind(this)} input={this.state.phos}></MultiVarianceSelectField>
-                <button onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
+                <button disabled={isInvalid} onClick={this.handleSubmit.bind(this)} className="btn btn-primary" type="submit">Analyze</button>
               </div>
           }
         </div>
@@ -4194,10 +4199,11 @@ class Login extends Component {
   // }
 
 
-  handleSignIn() {
+  handleSignIn = e => {
     //A callback function for logging in existing users
 
     /* Sign in the user */
+    e.preventDefault();
     firebase.auth().signInWithEmailAndPassword(this.state.email, this.state.password)
       .then(user => {
         this.setState({
@@ -4248,30 +4254,31 @@ class Login extends Component {
         {this.state.user &&
           <div className="alert alert-success" id='loggedin'><h5>Logged in as {this.state.user.email}</h5></div>
         }
+        <form onSubmit={this.handleSignIn}>
+          <div className="form-group">
+            <label>Email: </label>
+            <input className="form-control"
+              name="email"
+              value={this.state.email}
+              onChange={(event) => { this.handleChange(event) }}
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Email: </label>
-          <input className="form-control"
-            name="email"
-            value={this.state.email}
-            onChange={(event) => { this.handleChange(event) }}
-          />
-        </div>
+          <div className="form-group">
+            <label>Password: </label>
+            <input type="password" className="form-control"
+              name="password"
+              value={this.state.password}
+              onChange={(event) => { this.handleChange(event) }}
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Password: </label>
-          <input type="password" className="form-control"
-            name="password"
-            value={this.state.password}
-            onChange={(event) => { this.handleChange(event) }}
-          />
-        </div>
-
-        <div className="form-group">
-          <button className="btn btn-success mr-2" onClick={() => this.handleSignIn()}>
-            Sign In
+          <div className="form-group">
+            <button type="submit" className="btn btn-success mr-2">
+              Sign In
                 </button>
-        </div>
+          </div>
+        </form>
         <p>
           <Link to={"/PasswordForget"}>Forgot Password?</Link>
         </p>
