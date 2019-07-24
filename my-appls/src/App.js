@@ -41,6 +41,7 @@ import { Redirect, Link } from 'react-router-dom'
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Switch from '@material-ui/core/Switch';
 import ReactLoading from 'react-loading';
+import { truncateSync } from 'fs';
 
 var config = {
   apiKey: "AIzaSyBGflsX38vQ4SVYcsPDXySUmIWZFnbIwao",
@@ -615,8 +616,7 @@ class SavedSequences extends Component {
                   <div>
                     <p>{this.state.mutation_list}</p>
                     <Results saveButton={false} selecteddrugs={this.state.cmvdrugs} epistasis={[]} selected97phos={this.state.analyzeid.phos97} selected54poly={this.state.analyzeid.poly54} selected56term={this.state.analyzeid.term56} isClicked={this.state.submitClickedCMV}></Results>
-                    }
-                </div>
+                  </div>
                 </StickyContainer>
               </div>
               :
@@ -626,8 +626,7 @@ class SavedSequences extends Component {
                   <div>
                     <p>{this.state.mutation_list}</p>
                     <HSVResults user={this.props.user} virus={"HSV-2"} saveButton={false} selecteddrugs={this.state.hsvdrugs} epistasis={[]} selectedThymidine={this.state.analyzeid.tk23} selectedPolymerase={this.state.analyzeid.poly30} isClicked={this.state.submitClickedHSV}></HSVResults>
-                    }
-                </div>
+                  </div>
                 </StickyContainer>
               </div>
             )
@@ -3745,12 +3744,26 @@ class FoldCard extends React.Component {
   }
 }
 
+const _ADD_VARIANT_INITIAL_STATE_ = {
+  Virus: '',
+  gene: '',
+  variant: '',
+  fold: '',
+  reference: '',
+  comments: '',
+  success: '',
+  failure: '',
+  selecteddrugs: [""],
+  HSVdrugs: [],
+  CMVdrugs: [],
+};
+
 class AddVariants extends Component {
   constructor(props) {
     super(props);
     this.state = {
       user: this.props.user,
-      virus: '',
+      Virus: '',
       gene: '',
       variant: '',
       fold: '',
@@ -3758,21 +3771,23 @@ class AddVariants extends Component {
       comments: '',
       success: '',
       failure: '',
-      selecteddrugs: [],
-      drugs: []
+      selecteddrugs: [""],
+      HSVdrugs: [],
+      CMVdrugs: [],
     };
   }
 
   onChangeSelectionVirus(value) {
     this.setState({
-      Virus: value
+      Virus: value,
+      selecteddrugs: [""]
     });
   }
 
 
   onChangeSelectionGene(value) {
     this.setState({
-      gene: value
+      gene: value,
     });
   }
 
@@ -3789,20 +3804,89 @@ class AddVariants extends Component {
       let drug = this.state.selecteddrugs[i] + "fold";
       let _state = this.state.selecteddrugs[i]
       let fold = Number(this.state[_state])
-      console.log(fold)
       data[drug] = fold
     }
     data["Variant"] = this.state.variant;
     data["Reference"] = this.state.reference;
     data["Comments"] = this.state.comments;
-    db.collection(this.state.gene).doc(this.state.variant).set(data)
-      .then(function () {
-        this.setState({ success: "Document successfully written!" });
-      })
-      .catch(function () {
-        console.log("Error writing document");
-      });
-
+    data["UserAdded"] = this.state.user.email;
+    let virus = this.state.Virus;
+    console.log(data)
+    console.log(this.state.gene)
+    if (virus === "CMV") {
+      db.collection(this.state.gene).doc(this.state.variant).set(data)
+        .then(function () {
+          toast.success("Variant " + data["Variant"] + " has been added to the database", {
+            toastId: 13,
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        })
+        .catch((err) => {
+          toast.error(err.message, {
+            toastId: 13,
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        });
+    } else if (virus === "HSV-1") {
+      db.collection("HSV1resistance").doc("HSV1resistance").collection(this.state.gene).doc(this.state.variant).set(data)
+        .then(function () {
+          toast.success("Variant " + data["Variant"] + " has been added to the database", {
+            toastId: 13,
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        })
+        .catch((err) => {
+          toast.error(err.message, {
+            toastId: 13,
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        });
+    } else if (virus === "HSV-2") {
+      db.collection("HSV2resistance").doc("HSV2resistance").collection(this.state.gene).doc(this.state.variant).set(data)
+        .then(function () {
+          toast.success("Variant " + data["Variant"] + " has been added to the database", {
+            toastId: 13,
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        })
+        .catch((err) => {
+          toast.error(err.message, {
+            toastId: 13,
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        });
+    }
+    this.setState(_ADD_VARIANT_INITIAL_STATE_);
   }
 
   handleChange(event) {
@@ -3814,7 +3898,7 @@ class AddVariants extends Component {
   }
 
   componentWillMount() {
-    var drugarray = []
+    var CMVdrugarray = []
     db
       .collection('drug')
       .get()
@@ -3826,18 +3910,49 @@ class AddVariants extends Component {
             var keys = Object.keys(object);
             var i;
             for (i = 0; i < keys.length; i++) {
-              drugarray.push({
+              CMVdrugarray.push({
                 label: keys[i],
                 value: keys[i]
               })
             }
-            this.setState({ drugs: drugarray })
+            this.setState({ CMVdrugs: CMVdrugarray })
+          });
+      });
+
+    var HSVdrugarray = [];
+    db
+      .collection('HSVdrug')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            // var object = JSON.parse(doc._document.data)
+            var object = doc.data();
+            var keys = Object.keys(object);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+              HSVdrugarray.push({
+                label: keys[i],
+                value: keys[i]
+              })
+            }
+            this.setState({ HSVdrugs: HSVdrugarray })
           });
       });
   }
 
 
   render() {
+    console.log(this.state.user.email)
+    let { gene, variant, Virus, selecteddrugs } = this.state
+    let drugs = '';
+    if (Virus === "CMV") {
+      drugs = this.state.CMVdrugs
+    } else if (Virus === "HSV-1" || Virus === "HSV-2") {
+      drugs = this.state.HSVdrugs
+    }
+    let isInvalid = gene === "" || variant === "" || Virus === "" || selecteddrugs[0] === "";
     return (
       <div className="container">
         <h3 className='pageheader'>Add Variants to the Database</h3>
@@ -3845,12 +3960,12 @@ class AddVariants extends Component {
           <form style={{ flexGrow: "1", marginRight: "5vw" }}>
             <div>
               <VirusSelectField changeSelection={this.onChangeSelectionVirus.bind(this)}></VirusSelectField>
-              <GeneSelectField changeSelection={this.onChangeSelectionGene.bind(this)}></GeneSelectField>
+              <GeneSelectField virus={this.state.Virus} changeSelection={this.onChangeSelectionGene.bind(this)}></GeneSelectField>
             </div>
           </form>
           <form style={{ flexGrow: "1" }}>
 
-            <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={this.state.drugs}></MultiDrugSelectField>
+            <MultiDrugSelectField changeSelection={this.onChangeSelectionDrug.bind(this)} input={drugs}></MultiDrugSelectField>
             <Input label="Enter your variant" type="variant" className="form-control"
               name="variant"
               value={this.state.variant}
@@ -3859,19 +3974,22 @@ class AddVariants extends Component {
           </form>
         </div>
         <div style={{ display: "flex", flexDirection: "flex-row", flexWrap: "wrap" }}>
-          {this.state.selecteddrugs.map(element => {
-            return <div key={element} style={{ marginRight: "1rem" }}>
-              <label>
-                <Input label={"Enter " + element.charAt(0).toUpperCase() + element.slice(1) + " Fold"}
-                  type='variant' className="form-control"
-                  name={element}
-                  value={this.state.element}
-                  onChange={(event) => { this.handleChange(event) }}
-                />
-              </label>
-            </div>
-          })}
-
+          {selecteddrugs[0] === "" ?
+            <div></div>
+            :
+            (this.state.selecteddrugs.map(element => {
+              return <div key={element} style={{ marginRight: "1rem" }}>
+                <label>
+                  <Input label={"Enter " + element.charAt(0).toUpperCase() + element.slice(1) + " Fold"}
+                    type="number" step=".01" className="form-control"
+                    name={element}
+                    value={this.state.element}
+                    onChange={(event) => { this.handleChange(event) }}
+                  />
+                </label>
+              </div>
+            }))
+          }
         </div>
         <form>
           <div style={{ display: "flex", flexDirection: "flex-row", alignContent: "space-between" }}>
@@ -3891,7 +4009,7 @@ class AddVariants extends Component {
             </div>
           </div>
           <div className="form-group">
-            <button type='button' className="btn btn-primary mr-2" onClick={() => this.handleVariant()}>
+            <button disabled={isInvalid} type='button' className="btn btn-primary mr-2" onClick={() => this.handleVariant()}>
               Submit Variant
                  </button>
           </div>
@@ -3902,6 +4020,7 @@ class AddVariants extends Component {
             <div className="alert alert-success" id='loggedin'><h5>Logged in as {this.state.user.email}</h5></div>
           }
         </form>
+        <ToastContainer />
       </div>
     )
   }
@@ -4488,11 +4607,15 @@ var MultiDrugSelectField = createClass({
   render() {
     const { disabled, stayOpen, value } = this.state;
     const options = this.props.input;
+    let isInvalid = false;
+    if (options === '') {
+      isInvalid = true;
+    }
     return (
       <div className="section">
         <Select
           closeOnSelect={stayOpen}
-          disabled={disabled}
+          disabled={isInvalid}
           multi
           onChange={this.handleSelectChange}
           options={options}
@@ -4570,16 +4693,33 @@ var GeneSelectField = createClass({
 
   render() {
     const { disabled, stayOpen, value } = this.state;
-    const options = [
-      { value: 'ul54polymerasevariance', label: 'UL54 Polymerase' },
-      { value: 'ul56terminasevariants', label: 'UL56 Terminase' },
-      { value: 'ul97phosphotrasferasevariants', label: 'UL97 Phosphotransferase' }
-    ]
+    var options = [];
+    let isInvalid = false;
+    let virus = this.props.virus
+    if (virus === "CMV") {
+      options = [
+        { value: 'ul54polymerasevariance', label: 'UL54 Polymerase' },
+        { value: 'ul56terminasevariants', label: 'UL56 Terminase' },
+        { value: 'ul97phosphotransferasevariants', label: 'UL97 Phosphotransferase' }
+      ];
+    } else if (virus === "HSV-1") {
+      options = [
+        { value: 'HSV1Polymerase', label: 'UL30 - DNA Polymerase' },
+        { value: 'HSV1ThymidineKinase', label: 'UL23 - Thymidine Kinase' },
+      ];
+    } else if (virus === "HSV-2") {
+      options = [
+        { value: 'HSV2Polymerase', label: 'UL30 - DNA Polymerase' },
+        { value: 'HSV2ThymidineKinase', label: 'UL23 - Thymidine Kinase' },
+      ];
+    } else {
+      isInvalid = true;
+    }
     return (
       <div className="section">
         <Select
           closeOnSelect={stayOpen}
-          disabled={disabled}
+          disabled={isInvalid}
           onChange={this.handleSelectChange}
           options={options}
           placeholder="Choose a gene"
