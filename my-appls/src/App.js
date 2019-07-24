@@ -3396,6 +3396,7 @@ class HSVResults extends Component {
       foldtotal += folddata[i].fold
     }
     let virus = this.props.virus
+    let noData = this.state.selectedThymidine.length === 0 && this.state.selectedPolymerase.length === 0;
     return (
       <div>
         <div>
@@ -3414,7 +3415,33 @@ class HSVResults extends Component {
             (foldtotal === 0 ?
               <div>
                 <h1 className="pageheader">Results:</h1>
-                <h2 style={{ textDecoration: 'underline' }}>Drug Resistance Profile</h2>
+                <h2 style={{ textDecoration: 'underline', display: 'inline-block' }}>Drug Resistance Profile</h2>
+                {noData ?
+                  <div></div>
+                  :
+                  (this.props.user === '' ?
+                    <div style={{ display: 'inline' }}>
+                      <button style={{ padding: '5px', display: 'inline', margin: '0px 0px 0px 10px' }} disabled className="btn btn-success">
+                        Log in to Save
+              <i style={{ marginLeft: '5px' }} className="fa fa-save"></i>
+                      </button>
+                    </div>
+                    :
+                    <div style={{ display: 'inline' }}>
+                      {this.props.saveButton === true ? (this.state.saved === false && this.props.saveButton === true ?
+                        <button style={{ padding: '5px', display: 'inline', margin: '0px 0px 0px 10px' }} onClick={this.openModal} className="btn btn-success">
+                          Save to Profile
+              <i style={{ marginLeft: '5px' }} className="fa fa-save"></i>
+                        </button>
+                        :
+                        <div style={{ color: 'green', display: 'inline', margin: '0px 0px 0px 10px' }}>
+                          <strong>Saved</strong>
+                          <i style={{ marginLeft: '5px' }} className="fa fa-check" aria-hidden="true"></i>
+                        </div>
+                      ) : <div></div>}
+                    </div>
+                  )
+                }
                 <p>Fold change by drug</p>
                 <div className="drugProfile">
                   <p style={{ "color": "red", "fontWeight": "bold" }}>
@@ -3452,7 +3479,6 @@ class HSVResults extends Component {
                         <i style={{ marginLeft: '5px' }} className="fa fa-check" aria-hidden="true"></i>
                       </div>
                     ) : <div></div>}
-
                   </div>
 
                 }
@@ -3522,7 +3548,9 @@ class HSVResults extends Component {
               </div>
             )
           }
-          <h2>Individual Variant Resistance</h2>
+          {!noData &&
+            <h2>Individual Variant Resistance</h2>
+          }
           {
             this.state.selectedThymidine.length !== 0 ?
               <div>
@@ -3647,12 +3675,13 @@ class ActiveFormatter extends React.Component {
       authors: [],
       year: '',
       publication: '',
+      id: ''
     }
   }
   componentWillMount() {
     let url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=" + this.props.enumObject[0] + "&retmode=json&tool=my_tool&email=my_email@example.com";
     if (this.props.enumObject[0] !== undefined) {
-      fetch(url)
+      fetch(url, { mode: 'cors' })
         .then((responseText) => responseText.json())
         .then((response) => {
           let results = response.result[this.props.enumObject[0]]
@@ -3663,8 +3692,9 @@ class ActiveFormatter extends React.Component {
           this.setState({ year: pubdate })
           this.setState({ publication: source })
         })
-        .catch(function () {
-          console.log("Error getting citation");
+        .catch((error) => {
+          this.setState({ id: this.props.enumObject[0] })
+          console.log("Error getting citation: " + error);
         });
     }
   }
@@ -3672,7 +3702,7 @@ class ActiveFormatter extends React.Component {
   render() {
     let link = "https://www.ncbi.nlm.nih.gov/pubmed/" + this.props.enumObject[0]
     return (
-      <FormattedCitation authors={this.state.authors} year={this.state.year.substr(0, this.state.year.indexOf(" "))} publication={this.state.publication} link={link}></FormattedCitation>
+      <FormattedCitation id={this.state.id} authors={this.state.authors} year={this.state.year.substr(0, this.state.year.indexOf(" "))} publication={this.state.publication} link={link}></FormattedCitation>
       // <a href={link}>{this.state.lastnames} {this.state.year} {this.state.publication}</a>
     );
   }
@@ -3702,8 +3732,15 @@ class FormattedCitation extends React.Component {
         lastnames += ", et al."
       }
     }
+    let apiRejection = this.props.id !== "";
     return (
-      <a href={this.props.link} > {lastnames}, {this.props.publication}, {this.props.year}</a>
+      <div>
+        {apiRejection ?
+          <a href={this.props.link} > {this.props.id} </a>
+          :
+          <a href={this.props.link} > {lastnames}, {this.props.publication}, {this.props.year}</a>
+        }
+      </div>
     );
   }
 }
