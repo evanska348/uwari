@@ -20,10 +20,6 @@ import 'mdbreact/dist/css/mdb.css';
 import './App.css';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import aws_exports from './aws-exports';
-import { withAuthenticator, S3Album } from 'aws-amplify-react';
-import Amplify, { Analytics, Storage } from 'aws-amplify';
-import AWS from 'aws-sdk';
 import axios from 'axios';
 import Tooltip from "react-simple-tooltip"
 import { css } from "styled-components"
@@ -186,13 +182,27 @@ class App extends Component {
 
                   <NavItem>
                     <Dropdown>
-                      <DropdownToggle nav caret>CMVdb</DropdownToggle>
-                      <DropdownMenu basic>
+                      <DropdownToggle nav caret>CMV</DropdownToggle>
+                      <DropdownMenu style={{ marginTop: "12px" }}>
                         <DropdownItem>
-                          <NavLink className="nav-link waves-effect waves-light" to="/CMVdb">CMV Manual Input</NavLink>
+                          <NavLink className="nav-link waves-effect waves-light" to="/CMVdb">CMV Variant Input</NavLink>
+                        </DropdownItem>
+                        <DropdownItem divider />
+                        <DropdownItem>
+                          <NavLink className="nav-link waves-effect waves-light dropdown" to="/CMVFileInput">CMV ABI/FASTA Input</NavLink>
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
+                  </NavItem>
+                  <NavItem>
+                    <Dropdown>
+                      <DropdownToggle nav caret>HSV-1</DropdownToggle>
+                      <DropdownMenu style={{ marginTop: "12px" }}>
+                        <DropdownItem>
+                          <NavLink className="nav-link waves-effect waves-light" to="/HSV1db">HSV-1 Variant Input</NavLink>
                         </DropdownItem>
                         <DropdownItem>
-                          <NavLink className="nav-link waves-effect waves-light dropdown" to="/CMVFileInput">CMV File Input</NavLink>
+                          <NavLink className="nav-link waves-effect waves-light dropdown" to="/HSV1FileInput">HSV-1 ABI/FASTA Input</NavLink>
                         </DropdownItem>
                       </DropdownMenu>
                     </Dropdown>
@@ -200,27 +210,13 @@ class App extends Component {
 
                   <NavItem>
                     <Dropdown>
-                      <DropdownToggle nav caret>HSV-1db</DropdownToggle>
-                      <DropdownMenu>
+                      <DropdownToggle nav caret>HSV-2</DropdownToggle>
+                      <DropdownMenu style={{ marginTop: "12px" }}>
                         <DropdownItem>
-                          <NavLink className="nav-link waves-effect waves-light" to="/HSV1db">HSV-1 Manual Input</NavLink>
+                          <NavLink className="nav-link waves-effect waves-light" to="/HSV2db">HSV-2 Variant Input</NavLink>
                         </DropdownItem>
                         <DropdownItem>
-                          <NavLink className="nav-link waves-effect waves-light dropdown" to="/HSV1FileInput">HSV-1 File Input</NavLink>
-                        </DropdownItem>
-                      </DropdownMenu>
-                    </Dropdown>
-                  </NavItem>
-
-                  <NavItem>
-                    <Dropdown>
-                      <DropdownToggle nav caret>HSV-2db</DropdownToggle>
-                      <DropdownMenu>
-                        <DropdownItem>
-                          <NavLink className="nav-link waves-effect waves-light" to="/HSV2db">HSV-2 Manual Input</NavLink>
-                        </DropdownItem>
-                        <DropdownItem>
-                          <NavLink className="nav-link waves-effect waves-light dropdown" to="/HSV2FileInput">HSV-2 File Input</NavLink>
+                          <NavLink className="nav-link waves-effect waves-light dropdown" to="/HSV2FileInput">HSV-2 ABI/FASTA Input</NavLink>
                         </DropdownItem>
                       </DropdownMenu>
                     </Dropdown>
@@ -295,11 +291,6 @@ class App extends Component {
               <AddVariants {...props} uid={this.state.user} user={this.state.user} />
             )} />
             <Route path="/WelcomePage" component={WelcomePage} />
-            {/* <Route path="/CMVdb" component={CMVdb} />
-            <Route path="/HSV1db" component={HSV1db} />
-            <Route path="/HSV2db" component={HSV2db} /> */}
-            {/* <Route path="/AddVariants" component={AddVariants} /> */}
-            {/* <Route path="/CMVFileInput" component={CMVFileInput} /> */}
             <Route path="/HSV1FileInput" component={HSV1FileInput} />
             <Route path="/PasswordForget" component={PasswordForgetFormBase} />
             <Route path="/SignUp" component={SignUpFormBase} />
@@ -353,9 +344,10 @@ class WelcomePage extends Component {
               fontSize: 'large', color: 'white'
             }}>
               <h1 id="title">
-                {/* <strong> */}
-                <p>Find Drug Resistance CMV - HSV1 - HSV2</p>
-                {/* </strong> */}
+                <strong>
+                  <p>Antiviral Resistance Database</p>
+                </strong>
+                <p>CMV - HSV1 - HSV2</p>
               </h1>
             </div>
             <p style={{
@@ -369,7 +361,7 @@ class WelcomePage extends Component {
             <h3> About </h3>
           </ScrollableAnchor>
           <p>
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+            Search for antiviral resistance for common antiviral agents in CMV, HSV-1, and HSV-2 using specific amino acid variants or FASTA or Sanger sequencing ABI files.
           </p>
         </div>
       </div>
