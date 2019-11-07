@@ -20,6 +20,10 @@ The web app is a single page application built using the React.js web framework 
  * ES6 sometimes - needs improving
  * 
 
+### Hosting
+Ec2 for server
+Godaddy for domain registrar
+github pages
 
 ### Server Side application
 
