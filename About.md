@@ -20,12 +20,13 @@ The web app is a single page application built using the React.js web framework 
  * ES6 sometimes - needs improving
  * 
 
+### Server Side application
+
 ### Hosting
 Ec2 for server
 Godaddy for domain registrar
 github pages
 
-### Server Side application
 
 ### Databases
 
@@ -35,6 +36,54 @@ This application mainly uses Google Firebase services for data storage. Firebase
 * **Google Firebase Realtime Database** - profile specific data
 * **Google Firebase Cloud Firestore** - Variant data
 * **AWS S3** - temporary sequence file storage
+
+Firebase configurations and initialization.
+
+```javascript
+var config = {
+  apiKey: "AIzaSyBGflsX38vQ4SVYcsPDXySUmIWZFnbIwao",
+  authDomain: "cmvdb-555bc.firebaseapp.com",
+  databaseURL: "https://cmvdb-555bc.firebaseio.com",
+  projectId: "cmvdb-555bc",
+  storageBucket: "cmvdb-555bc.appspot.com",
+  messagingSenderId: "869787015915"
+};
+
+firebase.initializeApp(config);
+const provider = new firebase.auth.GoogleAuthProvider();
+const auth = firebase.auth();
+const firestore = firebase.firestore();
+const settings = {};
+firestore.settings(settings);
+const db = firebase.firestore();
+```
+
+Firebase request to call for drugs.
+
+```javascript
+  componentWillMount() {
+    var drugarray = []
+    db
+      .collection('drug')
+      .get()
+      .then(snapshot => {
+        snapshot
+          .docs
+          .forEach(doc => {
+            let object = doc.data()
+            var keys = Object.keys(object);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+              drugarray.push({
+                label: keys[i],
+                value: keys[i]
+              })
+            }
+            this.setState({ drugs: drugarray })
+          });
+      });
+  }
+```
 
 ## Client Side Classes Rundown
 
